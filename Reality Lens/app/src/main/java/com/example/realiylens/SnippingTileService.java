@@ -1,5 +1,6 @@
 package com.example.realiylens;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityOptions;
 import android.app.PendingIntent;
 import android.content.Intent;
@@ -19,6 +20,7 @@ public class SnippingTileService extends TileService {
         }
     }
 
+    @SuppressLint("StartActivityAndCollapseDeprecated")
     @Override
     public void onClick() {
         super.onClick();
@@ -53,7 +55,9 @@ public class SnippingTileService extends TileService {
                         intent, 
                         PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_IMMUTABLE : 0)
                 );
-                startActivityAndCollapse(pendingIntent);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    startActivityAndCollapse(pendingIntent);
+                }
             }
         }
     }

@@ -44,7 +44,7 @@ public class SnippingService extends Service {
         super.onCreate();
         createNotificationChannel();
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Snipping Tool Active")
+                .setContentTitle("RealityLens Active")
                 .setContentText("Tap and drag to capture screen")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .build();
@@ -78,36 +78,32 @@ public class SnippingService extends Service {
 
         params.gravity = Gravity.TOP | Gravity.LEFT;
         windowManager.addView(selectionView, params);
-
-        selectionView.setOnSelectionListener(this::captureScreen);
+        selectionView.setOnSelectionListener(this::captureAndSave);
     }
 
-    private void captureScreen(RectF rect) {
+    private void captureAndSave(RectF rect) {
         if (rect.width() < 10 || rect.height() < 10) return;
 
         selectionView.setVisibility(android.view.View.GONE);
 
-        // Give a tiny delay for the overlay to disappear
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             Image image = imageReader.acquireLatestImage();
             if (image != null) {
                 Bitmap bitmap = processImage(image, rect);
                 if (bitmap != null) {
-                    saveImage(bitmap);
+                    MainActivity.saveImageToGallery(this, bitmap);
+                    Toast.makeText(this, "Snip saved to gallery", Toast.LENGTH_SHORT).show();
                 }
                 image.close();
-            } else {
-                Toast.makeText(this, "Failed to capture image.", Toast.LENGTH_SHORT).show();
             }
-            
-            // Close the service after a single capture
-            stopSelf();
-            
-            // Also notify the activity to finish if it's still running
-            Intent broadcastIntent = new Intent("com.example.realiylens.FINISH_ACTIVITY");
-            sendBroadcast(broadcastIntent);
-            
+            finishWork();
         }, 150);
+    }
+
+    private void finishWork() {
+        stopSelf();
+        Intent broadcastIntent = new Intent("com.example.realiylens.FINISH_ACTIVITY");
+        sendBroadcast(broadcastIntent);
     }
 
     private Bitmap processImage(Image image, RectF rect) {
@@ -125,35 +121,22 @@ public class SnippingService extends Service {
             int top = Math.max(0, (int) rect.top);
             int width = Math.min(bitmap.getWidth() - left, (int) rect.width());
             int height = Math.min(bitmap.getHeight() - top, (int) rect.height());
-            
             return Bitmap.createBitmap(bitmap, left, top, width, height);
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
-    }
-
-    private void saveImage(Bitmap bitmap) {
-        MainActivity.saveImageToGallery(this, bitmap);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_NOT_STICKY;
-        
         int resultCode = intent.getIntExtra("resultCode", 0);
         Intent data = intent.getParcelableExtra("data");
 
         if (data != null) {
             MediaProjectionManager mpManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
             mediaProjection = mpManager.getMediaProjection(resultCode, data);
-            
-            mediaProjection.registerCallback(new MediaProjection.Callback() {
-                @Override
-                public void onStop() {
-                    super.onStop();
-                }
-            }, new Handler(Looper.getMainLooper()));
+            mediaProjection.registerCallback(new MediaProjection.Callback() {}, new Handler(Looper.getMainLooper()));
 
             imageReader = ImageReader.newInstance(mScreenWidth, mScreenHeight, PixelFormat.RGBA_8888, 2);
             virtualDisplay = mediaProjection.createVirtualDisplay("ScreenCapture",
@@ -161,7 +144,6 @@ public class SnippingService extends Service {
                     DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                     imageReader.getSurface(), null, null);
         }
-
         return START_NOT_STICKY;
     }
 
@@ -170,9 +152,7 @@ public class SnippingService extends Service {
             NotificationChannel serviceChannel = new NotificationChannel(
                     CHANNEL_ID, "Snipping Service Channel", NotificationManager.IMPORTANCE_LOW);
             NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(serviceChannel);
-            }
+            if (manager != null) manager.createNotificationChannel(serviceChannel);
         }
     }
 
@@ -187,7 +167,5 @@ public class SnippingService extends Service {
 
     @Nullable
     @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+    public IBinder onBind(Intent intent) { return null; }
 }

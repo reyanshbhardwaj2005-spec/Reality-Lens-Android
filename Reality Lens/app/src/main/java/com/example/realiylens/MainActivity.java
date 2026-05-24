@@ -1,6 +1,7 @@
 package com.example.realiylens;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.StatusBarManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -50,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
