@@ -14,4 +14,6 @@
 
     <color name="link_color">#00D2FF</color>
     <color name="google_btn_background">#1C1C1E</color>
+
+    <color name="success_green">#4CAF50</color>
 </resources>

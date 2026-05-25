@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
@@ -28,7 +29,18 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import com.example.realiylens.network.RetrofitClient;
+import com.example.realiylens.network.SubmitResponse;
+
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class SnippingService extends Service {
     private static final String CHANNEL_ID = "SnippingServiceChannel";
@@ -78,10 +90,10 @@ public class SnippingService extends Service {
 
         params.gravity = Gravity.TOP | Gravity.LEFT;
         windowManager.addView(selectionView, params);
-        selectionView.setOnSelectionListener(this::captureAndSave);
+        selectionView.setOnSelectionListener(this::captureAndHandle);
     }
 
-    private void captureAndSave(RectF rect) {
+    private void captureAndHandle(RectF rect) {
         if (rect.width() < 10 || rect.height() < 10) return;
 
         selectionView.setVisibility(android.view.View.GONE);
@@ -91,13 +103,70 @@ public class SnippingService extends Service {
             if (image != null) {
                 Bitmap bitmap = processImage(image, rect);
                 if (bitmap != null) {
+                    // Save to gallery
                     MainActivity.saveImageToGallery(this, bitmap);
-                    Toast.makeText(this, "Snip saved to gallery", Toast.LENGTH_SHORT).show();
+                    
+                    // Submit to API
+                    submitCapturedImage(bitmap);
                 }
                 image.close();
+            } else {
+                Toast.makeText(this, "Failed to capture image", Toast.LENGTH_SHORT).show();
+                finishWork();
             }
-            finishWork();
         }, 150);
+    }
+
+    private void submitCapturedImage(Bitmap bitmap) {
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        String token = prefs.getString("access_token", "");
+
+        if (token.isEmpty()) {
+            Toast.makeText(this, "Authentication error. Please log in again.", Toast.LENGTH_SHORT).show();
+            finishWork();
+            return;
+        }
+
+        // Convert Bitmap to byte array
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        byte[] byteArray = stream.toByteArray();
+
+        // Create RequestBody and MultipartBody.Part
+        RequestBody requestFile = RequestBody.create(MediaType.parse("image/png"), byteArray);
+        MultipartBody.Part body = MultipartBody.Part.createFormData("file", "capture.png", requestFile);
+
+        String authHeader = "Bearer " + token;
+
+        // Perform network request
+        RetrofitClient.getApiService().submitImage(authHeader, body).enqueue(new Callback<SubmitResponse>() {
+            @Override
+            public void onResponse(Call<SubmitResponse> call, Response<SubmitResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String jobId = response.body().getJobId();
+                    
+                    // Store job_id locally
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putString("last_job_id", jobId);
+                    editor.apply();
+
+                    // Launch VerificationResultActivity
+                    Intent resultIntent = new Intent(SnippingService.this, VerificationResultActivity.class);
+                    resultIntent.putExtra("job_id", jobId);
+                    resultIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(resultIntent);
+                } else {
+                    Toast.makeText(SnippingService.this, "Submission failed: " + response.code(), Toast.LENGTH_SHORT).show();
+                }
+                finishWork();
+            }
+
+            @Override
+            public void onFailure(Call<SubmitResponse> call, Throwable t) {
+                Toast.makeText(SnippingService.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                finishWork();
+            }
+        });
     }
 
     private void finishWork() {

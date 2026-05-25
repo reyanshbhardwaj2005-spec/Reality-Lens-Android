@@ -1,12 +1,21 @@
 package com.example.realiylens;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.realiylens.network.LoginRequest;
+import com.example.realiylens.network.LoginResponse;
+import com.example.realiylens.network.RetrofitClient;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -33,8 +42,7 @@ public class LoginActivity extends AppCompatActivity {
             if (email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "Please enter all details", Toast.LENGTH_SHORT).show();
             } else {
-                // Bypass login logic for now
-                navigateToMain();
+                performLogin(email, password);
             }
         });
 
@@ -47,9 +55,38 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    private void navigateToMain() {
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
-        finish();
+    private void performLogin(String email, String password) {
+        btnContinue.setEnabled(false);
+        
+        LoginRequest loginRequest = new LoginRequest(email, password);
+        
+        RetrofitClient.getApiService().login(loginRequest).enqueue(new Callback<LoginResponse>() {
+            @Override
+            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                btnContinue.setEnabled(true);
+                if (response.isSuccessful() && response.body() != null) {
+                    String token = response.body().getAccessToken();
+                    
+                    // Store token in SharedPreferences
+                    SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+                    prefs.edit().putString("access_token", token).apply();
+
+                    Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                    
+                    // Navigate to WelcomeActivity
+                    Intent intent = new Intent(LoginActivity.this, WelcomeActivity.class);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    Toast.makeText(LoginActivity.this, "Invalid credentials or server error", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<LoginResponse> call, Throwable t) {
+                btnContinue.setEnabled(true);
+                Toast.makeText(LoginActivity.this, "Network failure: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
