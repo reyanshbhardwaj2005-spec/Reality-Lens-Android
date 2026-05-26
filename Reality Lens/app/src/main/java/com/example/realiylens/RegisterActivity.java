@@ -5,88 +5,92 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.realiylens.network.LoginRequest;
 import com.example.realiylens.network.LoginResponse;
+import com.example.realiylens.network.RegisterRequest;
 import com.example.realiylens.network.RetrofitClient;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class LoginActivity extends AppCompatActivity {
+public class RegisterActivity extends AppCompatActivity {
 
-    private EditText etEmail, etPassword;
-    private Button btnContinue, btnGoogle, btnRegister;
+    private EditText etName, etEmail, etPassword;
+    private Button btnContinue, btnGoogle;
+    private androidx.appcompat.widget.AppCompatButton btnLoginHere;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_register);
 
         // Initialize views
+        etName = findViewById(R.id.et_name);
         etEmail = findViewById(R.id.et_email);
         etPassword = findViewById(R.id.et_password);
         btnContinue = findViewById(R.id.btn_continue);
-        btnGoogle = findViewById(R.id.btn_google);
-        btnRegister = findViewById(R.id.btn_register);
+        btnGoogle = findViewById(R.id.btn_google_signup);
+        btnLoginHere = findViewById(R.id.tv_login_here);
 
         // Set up click listeners
         btnContinue.setOnClickListener(v -> {
+            String name = etName.getText().toString().trim();
             String email = etEmail.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
 
-            if (email.isEmpty() || password.isEmpty()) {
+            if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "Please enter all details", Toast.LENGTH_SHORT).show();
             } else {
-                performLogin(email, password);
+                performRegistration(name, email, password);
             }
         });
 
         btnGoogle.setOnClickListener(v -> {
-            Toast.makeText(this, "Google Sign-In clicked", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Google Sign-Up clicked", Toast.LENGTH_SHORT).show();
         });
 
-        btnRegister.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
-            startActivity(intent);
+        btnLoginHere.setOnClickListener(v -> {
+            // Return to LoginActivity
+            finish();
         });
     }
 
-    private void performLogin(String email, String password) {
+    private void performRegistration(String name, String email, String password) {
         btnContinue.setEnabled(false);
-        
-        LoginRequest loginRequest = new LoginRequest(email, password);
-        
-        RetrofitClient.getApiService().login(loginRequest).enqueue(new Callback<LoginResponse>() {
+
+        RegisterRequest registerRequest = new RegisterRequest(name, email, password);
+
+        RetrofitClient.getApiService().register(registerRequest).enqueue(new Callback<LoginResponse>() {
             @Override
             public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
                 btnContinue.setEnabled(true);
                 if (response.isSuccessful() && response.body() != null) {
                     String token = response.body().getAccessToken();
-                    
+
                     // Store token in SharedPreferences
                     SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
                     prefs.edit().putString("access_token", token).apply();
 
-                    Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
-                    
+                    Toast.makeText(RegisterActivity.this, "Registration successful", Toast.LENGTH_SHORT).show();
+
                     // Navigate to WelcomeActivity
-                    Intent intent = new Intent(LoginActivity.this, WelcomeActivity.class);
+                    Intent intent = new Intent(RegisterActivity.this, WelcomeActivity.class);
                     startActivity(intent);
-                    finish();
+                    finishAffinity(); // Close login and register activities
                 } else {
-                    Toast.makeText(LoginActivity.this, "Invalid credentials or server error", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RegisterActivity.this, "Registration failed: " + response.message(), Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<LoginResponse> call, Throwable t) {
                 btnContinue.setEnabled(true);
-                Toast.makeText(LoginActivity.this, "Network failure: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(RegisterActivity.this, "Network failure: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

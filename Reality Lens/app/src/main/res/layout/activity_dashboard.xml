@@ -6,22 +6,34 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/login_background"
+    android:fitsSystemWindows="true"
     tools:context=".DashboardActivity">
 
-    <!-- Main Content -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- Top Header: Search and Menu -->
+        <!-- High-Visibility Top Loading Bar -->
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/pb_dashboard_loading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="gone"
+            android:layout_marginTop="32dp"
+            app:indicatorColor="@color/link_color"
+            app:layout_constraintTop_toTopOf="parent"
+            app:trackColor="#40FFFFFF"
+            app:trackThickness="10dp"
+            android:elevation="50dp" />
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/cl_header"
             android:layout_width="match_parent"
             android:layout_height="80dp"
             android:paddingHorizontal="20dp"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toBottomOf="@id/pb_dashboard_loading">
 
-            <!-- Search Bar -->
             <EditText
                 android:id="@+id/et_dashboard_search"
                 android:layout_width="0dp"
@@ -40,7 +52,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <!-- Hamburger Menu Button (Top Right) -->
             <ImageButton
                 android:id="@+id/btn_hamburger_menu"
                 android:layout_width="48dp"
@@ -67,7 +78,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/cl_header" />
 
-        <!-- Scrollable List -->
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -83,7 +93,6 @@
                 android:paddingHorizontal="20dp"
                 android:paddingBottom="24dp">
 
-                <!-- Placeholder for Recent Items -->
                 <include layout="@layout/item_recent_verification" />
                 <include layout="@layout/item_recent_verification" />
                 <include layout="@layout/item_recent_verification" />
@@ -95,7 +104,6 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Sidebar Menu (Right Drawer) -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view_sidebar"
         android:layout_width="280dp"

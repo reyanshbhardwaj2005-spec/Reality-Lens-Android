@@ -3,6 +3,7 @@ package com.example.realiylens;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
@@ -22,15 +24,21 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.Gravity;
+import android.view.View;
 import android.view.WindowManager;
+import android.view.WindowMetrics;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import com.example.realiylens.network.ResultResponse;
 import com.example.realiylens.network.RetrofitClient;
 import com.example.realiylens.network.SubmitResponse;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -43,41 +51,107 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class SnippingService extends Service {
+    private static final String TAG = "SnippingService";
     private static final String CHANNEL_ID = "SnippingServiceChannel";
+    private static final String RESULT_CHANNEL_ID = "ResultNotificationChannel";
+    private static final int NOTIFICATION_ID = 1;
+    private static final int RESULT_NOTIFICATION_ID = 1001;
+    
     private WindowManager windowManager;
     private SelectionView selectionView;
     private MediaProjection mediaProjection;
     private ImageReader imageReader;
     private VirtualDisplay virtualDisplay;
     private int mScreenWidth, mScreenHeight, mScreenDensity;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private int pollRetryCount = 0;
+    private static final int MAX_POLL_RETRIES = 45;
+    private static final int POLL_INTERVAL_MS = 4000;
+
+    private View globalLoadingBar;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        createNotificationChannel();
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("RealityLens Active")
-                .setContentText("Tap and drag to capture screen")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .build();
+        Log.d(TAG, "onCreate");
+        createNotificationChannels();
+        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        updateDisplayMetrics();
+        
+        Notification notification = createStatusNotification("RealityLens", "Initializing...", true);
+        startForeground(NOTIFICATION_ID, notification);
+    }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+    private void updateDisplayMetrics() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowMetrics metrics = windowManager.getCurrentWindowMetrics();
+            Rect bounds = metrics.getBounds();
+            mScreenWidth = bounds.width();
+            mScreenHeight = bounds.height();
+            mScreenDensity = (int) (getResources().getDisplayMetrics().density * 160f);
         } else {
-            startForeground(1, notification);
+            DisplayMetrics metrics = new DisplayMetrics();
+            windowManager.getDefaultDisplay().getRealMetrics(metrics);
+            mScreenWidth = metrics.widthPixels;
+            mScreenHeight = metrics.heightPixels;
+            mScreenDensity = metrics.densityDpi;
+        }
+    }
+
+    private Notification createStatusNotification(String title, String content, boolean isOngoing) {
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(content)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(isOngoing)
+                .build();
+    }
+
+    private void updateStatusNotification(String content) {
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify(NOTIFICATION_ID, createStatusNotification("RealityLens Analysis", content, true));
+        }
+    }
+
+    private void showResultNotification(String jobId, String title, String message, @Nullable Double confidence, @Nullable Double realityScore) {
+        Intent intent = new Intent(this, VerificationResultActivity.class);
+        intent.putExtra("job_id", jobId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, flags);
+
+        String mainText = message;
+        if (confidence != null && realityScore != null) {
+            mainText = String.format("Confidence: %d%% | Reality Score: %.2f", (int)(confidence * 100), realityScore);
         }
 
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        DisplayMetrics metrics = new DisplayMetrics();
-        windowManager.getDefaultDisplay().getRealMetrics(metrics);
-        mScreenWidth = metrics.widthPixels;
-        mScreenHeight = metrics.heightPixels;
-        mScreenDensity = metrics.densityDpi;
+        Notification notification = new NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(mainText)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .setBigContentTitle(title)
+                        .bigText(mainText + "\nTap to view full analysis."))
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setDefaults(Notification.DEFAULT_ALL)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .build();
 
-        setupOverlay();
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify(RESULT_NOTIFICATION_ID, notification);
+        }
     }
 
     private void setupOverlay() {
+        if (selectionView != null) return;
         selectionView = new SelectionView(this);
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
@@ -95,26 +169,86 @@ public class SnippingService extends Service {
 
     private void captureAndHandle(RectF rect) {
         if (rect.width() < 10 || rect.height() < 10) return;
-
         selectionView.setVisibility(android.view.View.GONE);
 
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            Image image = imageReader.acquireLatestImage();
-            if (image != null) {
-                Bitmap bitmap = processImage(image, rect);
-                if (bitmap != null) {
-                    // Save to gallery
-                    MainActivity.saveImageToGallery(this, bitmap);
-                    
-                    // Submit to API
-                    submitCapturedImage(bitmap);
+        setAnalyzingState(true);
+
+        handler.postDelayed(() -> {
+            if (imageReader == null) {
+                stopSelf();
+                return;
+            }
+            Image image = null;
+            try {
+                image = imageReader.acquireLatestImage();
+                if (image != null) {
+                    Bitmap bitmap = processImage(image, rect);
+                    if (bitmap != null) {
+                        MainActivity.saveImageToGallery(this, bitmap);
+                        submitCapturedImage(bitmap);
+                    }
+                    image.close();
+                } else {
+                    stopSelf();
                 }
-                image.close();
-            } else {
-                Toast.makeText(this, "Failed to capture image", Toast.LENGTH_SHORT).show();
-                finishWork();
+            } catch (Exception e) {
+                stopSelf();
             }
         }, 150);
+    }
+
+    private void setAnalyzingState(boolean isAnalyzing) {
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        prefs.edit().putBoolean("is_analyzing", isAnalyzing).apply();
+        
+        Intent intent = new Intent(isAnalyzing ? "com.example.realiylens.ANALYSIS_STARTED" : "com.example.realiylens.ANALYSIS_FINISHED");
+        sendBroadcast(intent);
+
+        if (isAnalyzing) {
+            showGlobalLoadingBar();
+        } else {
+            hideGlobalLoadingBar();
+        }
+    }
+
+    private void showGlobalLoadingBar() {
+        handler.post(() -> {
+            if (globalLoadingBar != null) return;
+
+            Context themedContext = new ContextThemeWrapper(this, R.style.Theme_RealiyLens);
+            LinearProgressIndicator indicator = new LinearProgressIndicator(themedContext);
+            indicator.setIndeterminate(true);
+            indicator.setIndicatorColor(getResources().getColor(R.color.link_color));
+            indicator.setTrackThickness((int) (4 * getResources().getDisplayMetrics().density));
+            indicator.setTrackColor(0x40FFFFFF);
+
+            globalLoadingBar = indicator;
+
+            WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
+                            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY :
+                            WindowManager.LayoutParams.TYPE_PHONE,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    PixelFormat.TRANSLUCENT);
+
+            params.gravity = Gravity.TOP;
+            windowManager.addView(globalLoadingBar, params);
+        });
+    }
+
+    private void hideGlobalLoadingBar() {
+        handler.post(() -> {
+            if (globalLoadingBar != null) {
+                try {
+                    windowManager.removeView(globalLoadingBar);
+                } catch (Exception ignored) {}
+                globalLoadingBar = null;
+            }
+        });
     }
 
     private void submitCapturedImage(Bitmap bitmap) {
@@ -122,57 +256,82 @@ public class SnippingService extends Service {
         String token = prefs.getString("access_token", "");
 
         if (token.isEmpty()) {
-            Toast.makeText(this, "Authentication error. Please log in again.", Toast.LENGTH_SHORT).show();
-            finishWork();
+            Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show();
+            setAnalyzingState(false);
+            stopSelf();
             return;
         }
 
-        // Convert Bitmap to byte array
+        updateStatusNotification("Uploading image...");
+
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
         byte[] byteArray = stream.toByteArray();
 
-        // Create RequestBody and MultipartBody.Part
         RequestBody requestFile = RequestBody.create(MediaType.parse("image/png"), byteArray);
         MultipartBody.Part body = MultipartBody.Part.createFormData("file", "capture.png", requestFile);
-
         String authHeader = "Bearer " + token;
 
-        // Perform network request
         RetrofitClient.getApiService().submitImage(authHeader, body).enqueue(new Callback<SubmitResponse>() {
             @Override
             public void onResponse(Call<SubmitResponse> call, Response<SubmitResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     String jobId = response.body().getJobId();
-                    
-                    // Store job_id locally
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putString("last_job_id", jobId);
-                    editor.apply();
-
-                    // Launch VerificationResultActivity
-                    Intent resultIntent = new Intent(SnippingService.this, VerificationResultActivity.class);
-                    resultIntent.putExtra("job_id", jobId);
-                    resultIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(resultIntent);
+                    pollRetryCount = 0;
+                    pollForResult(jobId, authHeader);
                 } else {
-                    Toast.makeText(SnippingService.this, "Submission failed: " + response.code(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SnippingService.this, "Upload failed", Toast.LENGTH_SHORT).show();
+                    setAnalyzingState(false);
+                    stopSelf();
                 }
-                finishWork();
             }
 
             @Override
             public void onFailure(Call<SubmitResponse> call, Throwable t) {
-                Toast.makeText(SnippingService.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                finishWork();
+                Toast.makeText(SnippingService.this, "Network error", Toast.LENGTH_SHORT).show();
+                setAnalyzingState(false);
+                stopSelf();
             }
         });
     }
 
-    private void finishWork() {
-        stopSelf();
-        Intent broadcastIntent = new Intent("com.example.realiylens.FINISH_ACTIVITY");
-        sendBroadcast(broadcastIntent);
+    private void pollForResult(String jobId, String authHeader) {
+        updateStatusNotification("Analyzing image... (" + pollRetryCount + ")");
+
+        RetrofitClient.getApiService().getResult(authHeader, jobId).enqueue(new Callback<ResultResponse>() {
+            @Override
+            public void onResponse(Call<ResultResponse> call, Response<ResultResponse> response) {
+                if (response.code() == 202) {
+                    retryPolling(jobId, authHeader);
+                } else if (response.isSuccessful() && response.body() != null) {
+                    ResultResponse result = response.body();
+                    String verdict = result.getVerdict() != null ? result.getVerdict().toUpperCase() : "Analysis Complete";
+                    showResultNotification(jobId, verdict, "Tap to view details.", result.getConfidence(), result.getRealityScore());
+                    setAnalyzingState(false);
+                    stopSelf();
+                } else {
+                    showResultNotification(jobId, "Analysis Failed", "Something went wrong during processing.", null, null);
+                    setAnalyzingState(false);
+                    stopSelf();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResultResponse> call, Throwable t) {
+                retryPolling(jobId, authHeader);
+            }
+        });
+    }
+
+    private void retryPolling(String jobId, String authHeader) {
+        if (pollRetryCount < MAX_POLL_RETRIES) {
+            pollRetryCount++;
+            handler.postDelayed(() -> pollForResult(jobId, authHeader), POLL_INTERVAL_MS);
+        } else {
+            showResultNotification(jobId, "Analysis Timed Out", "Process took too long.", null, null);
+            setAnalyzingState(false);
+            stopSelf();
+        }
     }
 
     private Bitmap processImage(Image image, RectF rect) {
@@ -198,40 +357,89 @@ public class SnippingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent == null) return START_NOT_STICKY;
+        if (intent == null) {
+            startForeground(NOTIFICATION_ID, createStatusNotification("RealityLens", "Closing...", false));
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+
         int resultCode = intent.getIntExtra("resultCode", 0);
         Intent data = intent.getParcelableExtra("data");
 
         if (data != null) {
-            MediaProjectionManager mpManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-            mediaProjection = mpManager.getMediaProjection(resultCode, data);
-            mediaProjection.registerCallback(new MediaProjection.Callback() {}, new Handler(Looper.getMainLooper()));
+            Log.d(TAG, "Starting projection...");
+            
+            Notification notification = createStatusNotification("RealityLens Active", "Tap and drag to capture screen", true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                try {
+                    startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+                } catch (Exception e) {
+                    startForeground(NOTIFICATION_ID, notification);
+                }
+            } else {
+                startForeground(NOTIFICATION_ID, notification);
+            }
 
-            imageReader = ImageReader.newInstance(mScreenWidth, mScreenHeight, PixelFormat.RGBA_8888, 2);
-            virtualDisplay = mediaProjection.createVirtualDisplay("ScreenCapture",
-                    mScreenWidth, mScreenHeight, mScreenDensity,
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                    imageReader.getSurface(), null, null);
+            MediaProjectionManager mpManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+            try {
+                mediaProjection = mpManager.getMediaProjection(resultCode, data);
+            } catch (Exception e) {
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+            
+            if (mediaProjection != null) {
+                mediaProjection.registerCallback(new MediaProjection.Callback() {
+                    @Override
+                    public void onStop() {
+                        super.onStop();
+                        stopSelf();
+                    }
+                }, handler);
+
+                imageReader = ImageReader.newInstance(mScreenWidth, mScreenHeight, PixelFormat.RGBA_8888, 2);
+                virtualDisplay = mediaProjection.createVirtualDisplay("ScreenCapture",
+                        mScreenWidth, mScreenHeight, mScreenDensity,
+                        DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                        imageReader.getSurface(), null, null);
+                
+                setupOverlay();
+            } else {
+                stopSelf();
+            }
         }
+        
         return START_NOT_STICKY;
     }
 
-    private void createNotificationChannel() {
+    private void createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    CHANNEL_ID, "Snipping Service Channel", NotificationManager.IMPORTANCE_LOW);
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) manager.createNotificationChannel(serviceChannel);
+            NotificationManager manager = (NotificationManager) getSystemService(NotificationManager.class);
+            if (manager != null) {
+                NotificationChannel serviceChannel = new NotificationChannel(
+                        CHANNEL_ID, "Analysis Service", NotificationManager.IMPORTANCE_LOW);
+                manager.createNotificationChannel(serviceChannel);
+
+                NotificationChannel resultChannel = new NotificationChannel(
+                        RESULT_CHANNEL_ID, "Verification Results", NotificationManager.IMPORTANCE_HIGH);
+                resultChannel.setVibrationPattern(new long[]{0, 500, 200, 500});
+                manager.createNotificationChannel(resultChannel);
+            }
         }
     }
 
     @Override
     public void onDestroy() {
+        Log.d(TAG, "onDestroy");
+        setAnalyzingState(false);
         super.onDestroy();
-        if (selectionView != null) windowManager.removeView(selectionView);
+        if (selectionView != null) {
+            try { windowManager.removeView(selectionView); } catch (Exception ignored) {}
+        }
         if (virtualDisplay != null) virtualDisplay.release();
         if (imageReader != null) imageReader.close();
         if (mediaProjection != null) mediaProjection.stop();
+        handler.removeCallbacksAndMessages(null);
     }
 
     @Nullable

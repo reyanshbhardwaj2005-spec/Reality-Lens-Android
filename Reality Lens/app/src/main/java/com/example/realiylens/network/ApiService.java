@@ -14,6 +14,9 @@ public interface ApiService {
     @POST("login")
     Call<LoginResponse> login(@Body LoginRequest request);
 
+    @POST("register")
+    Call<LoginResponse> register(@Body RegisterRequest request);
+
     @Multipart
     @POST("submit")
     Call<SubmitResponse> submitImage(
