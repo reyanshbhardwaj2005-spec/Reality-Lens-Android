@@ -1,5 +1,6 @@
 package com.example.realiylens.network;
 
+import java.util.List;
 import okhttp3.MultipartBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -28,5 +29,10 @@ public interface ApiService {
     Call<ResultResponse> getResult(
             @Header("Authorization") String authHeader,
             @Path("job_id") String jobId
+    );
+
+    @GET("history")
+    Call<List<ResultResponse>> getHistory(
+            @Header("Authorization") String authHeader
     );
 }

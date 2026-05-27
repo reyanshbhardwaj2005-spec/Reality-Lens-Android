@@ -9,11 +9,12 @@
     android:fitsSystemWindows="true"
     tools:context=".DashboardActivity">
 
+    <!-- Main Content -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- High-Visibility Top Loading Bar -->
+        <!-- Top Loading Bar -->
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/pb_dashboard_loading"
             android:layout_width="match_parent"
@@ -78,10 +79,12 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/cl_header" />
 
+        <!-- Scrollable List Area -->
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginTop="16dp"
+            android:fillViewport="true"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_recent_verifications_label">
 
@@ -91,19 +94,13 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:paddingHorizontal="20dp"
-                android:paddingBottom="24dp">
+                android:paddingBottom="24dp" />
 
-                <include layout="@layout/item_recent_verification" />
-                <include layout="@layout/item_recent_verification" />
-                <include layout="@layout/item_recent_verification" />
-                <include layout="@layout/item_recent_verification" />
-                <include layout="@layout/item_recent_verification" />
-
-            </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- Sidebar Menu -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view_sidebar"
         android:layout_width="280dp"

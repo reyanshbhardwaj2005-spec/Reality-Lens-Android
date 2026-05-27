@@ -1,30 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="16dp"
     app:cardBackgroundColor="@color/input_background"
     app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
     app:strokeColor="@color/input_stroke"
     app:strokeWidth="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="12dp">
 
-        <ImageView
-            android:id="@+id/iv_thumbnail"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:background="@drawable/panel_background"
-            android:scaleType="centerCrop"
-            android:src="@android:drawable/ic_menu_gallery"
+        <!-- Left: Image Thumbnail Container -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_thumbnail"
+            android:layout_width="85dp"
+            android:layout_height="85dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent">
 
+            <ImageView
+                android:id="@+id/iv_thumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@android:drawable/ic_menu_gallery" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Verdict Badge (verdict) -->
         <TextView
             android:id="@+id/tv_verdict_badge"
             android:layout_width="wrap_content"
@@ -33,38 +44,55 @@
             android:background="@drawable/panel_background"
             android:paddingHorizontal="8dp"
             android:paddingVertical="2dp"
-            android:text="VERIFIED TRUE"
-            android:textColor="@color/success_green"
+            android:textColor="@color/link_color"
             android:textSize="10sp"
             android:textStyle="bold"
-            app:layout_constraintStart_toEndOf="@id/iv_thumbnail"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintStart_toEndOf="@id/card_thumbnail"
+            app:layout_constraintTop_toTopOf="@id/card_thumbnail"
+            tools:text="VERDICT" />
 
+        <!-- Stats (confidence and reality_score) -->
+        <TextView
+            android:id="@+id/tv_stats"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            app:layout_constraintBottom_toBottomOf="@id/tv_verdict_badge"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/tv_verdict_badge"
+            app:layout_constraintTop_toTopOf="@id/tv_verdict_badge"
+            tools:text="Conf: 95% | Score: 0.9" />
+
+        <!-- Content Preview (claim) -->
         <TextView
             android:id="@+id/tv_content_preview"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:text="Captured claim from social media regarding..."
             android:textColor="@color/white"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/tv_verdict_badge"
-            app:layout_constraintTop_toBottomOf="@id/tv_verdict_badge" />
+            app:layout_constraintTop_toBottomOf="@id/tv_verdict_badge"
+            tools:text="The claim text captured from the screen goes here..." />
 
+        <!-- Timestamp (created_at) -->
         <TextView
             android:id="@+id/tv_timestamp"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="2 hours ago"
             android:textColor="@color/text_secondary"
             android:textSize="11sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/tv_verdict_badge"
-            app:layout_constraintTop_toBottomOf="@id/tv_content_preview" />
+            app:layout_constraintTop_toBottomOf="@id/tv_content_preview"
+            tools:text="2023-10-27 10:30 AM" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 </com.google.android.material.card.MaterialCardView>

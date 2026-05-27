@@ -13,16 +13,12 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.bumptech.glide.Glide;
 import com.example.realiylens.network.ResultResponse;
 import com.example.realiylens.network.RetrofitClient;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
-
 import java.util.List;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
