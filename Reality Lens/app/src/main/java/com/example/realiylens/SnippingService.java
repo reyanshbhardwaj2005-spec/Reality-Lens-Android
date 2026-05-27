@@ -31,18 +31,15 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.WindowMetrics;
 import android.widget.Toast;
-
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-
+import com.example.realiylens.network.MainResponseModel;
 import com.example.realiylens.network.ResultResponse;
 import com.example.realiylens.network.RetrofitClient;
 import com.example.realiylens.network.SubmitResponse;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
-
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -298,15 +295,20 @@ public class SnippingService extends Service {
     private void pollForResult(String jobId, String authHeader) {
         updateStatusNotification("Analyzing image... (" + pollRetryCount + ")");
 
-        RetrofitClient.getApiService().getResult(authHeader, jobId).enqueue(new Callback<ResultResponse>() {
+        RetrofitClient.getApiService().getResult(authHeader, jobId).enqueue(new Callback<MainResponseModel>() {
             @Override
-            public void onResponse(Call<ResultResponse> call, Response<ResultResponse> response) {
+            public void onResponse(Call<MainResponseModel> call, Response<MainResponseModel> response) {
                 if (response.code() == 202) {
                     retryPolling(jobId, authHeader);
                 } else if (response.isSuccessful() && response.body() != null) {
-                    ResultResponse result = response.body();
-                    String verdict = result.getVerdict() != null ? result.getVerdict().toUpperCase() : "Analysis Complete";
-                    showResultNotification(jobId, verdict, "Tap to view details.", result.getConfidence(), result.getRealityScore());
+                    MainResponseModel responseModel = response.body();
+                    ResultResponse result = responseModel.getResult();
+                    if (result != null) {
+                        String verdict = result.getVerdict() != null ? result.getVerdict().toUpperCase() : "Analysis Complete";
+                        showResultNotification(jobId, verdict, "Tap to view details.", result.getConfidence(), result.getRealityScore());
+                    } else {
+                        showResultNotification(jobId, "Analysis Complete", "Tap to view details.", null, null);
+                    }
                     setAnalyzingState(false);
                     stopSelf();
                 } else {
@@ -317,7 +319,7 @@ public class SnippingService extends Service {
             }
 
             @Override
-            public void onFailure(Call<ResultResponse> call, Throwable t) {
+            public void onFailure(Call<MainResponseModel> call, Throwable t) {
                 retryPolling(jobId, authHeader);
             }
         });

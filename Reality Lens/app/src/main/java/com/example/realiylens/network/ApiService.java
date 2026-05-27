@@ -26,13 +26,13 @@ public interface ApiService {
     );
 
     @GET("result/{job_id}")
-    Call<ResultResponse> getResult(
+    Call<MainResponseModel> getResult(
             @Header("Authorization") String authHeader,
             @Path("job_id") String jobId
     );
 
     @GET("history")
-    Call<List<ResultResponse>> getHistory(
+    Call<List<MainResponseModel>> getHistory(
             @Header("Authorization") String authHeader
     );
 }

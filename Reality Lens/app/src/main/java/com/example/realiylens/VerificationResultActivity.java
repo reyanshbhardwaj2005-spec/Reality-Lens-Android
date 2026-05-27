@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
+import com.example.realiylens.network.MainResponseModel;
 import com.example.realiylens.network.ResultResponse;
 import com.example.realiylens.network.RetrofitClient;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -70,9 +71,9 @@ public class VerificationResultActivity extends AppCompatActivity {
         String token = prefs.getString("access_token", "");
         String authHeader = "Bearer " + token;
 
-        RetrofitClient.getApiService().getResult(authHeader, jobId).enqueue(new Callback<ResultResponse>() {
+        RetrofitClient.getApiService().getResult(authHeader, jobId).enqueue(new Callback<MainResponseModel>() {
             @Override
-            public void onResponse(Call<ResultResponse> call, Response<ResultResponse> response) {
+            public void onResponse(Call<MainResponseModel> call, Response<MainResponseModel> response) {
                 if (response.code() == 202) {
                     handleRetry();
                     return;
@@ -87,7 +88,7 @@ public class VerificationResultActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<ResultResponse> call, Throwable t) {
+            public void onFailure(Call<MainResponseModel> call, Throwable t) {
                 handleFailure(t.getMessage());
             }
         });
@@ -112,21 +113,54 @@ public class VerificationResultActivity extends AppCompatActivity {
         }
     }
 
-    private void displayData(ResultResponse result) {
-        tvVerdict.setText(result.getVerdict() != null ? result.getVerdict().toUpperCase() : "ANALYSIS COMPLETE");
+    private void displayData(MainResponseModel responseModel) {
+        // Fetch data from flat fields (new API structure)
+        String verdict = responseModel.getVerdict();
+        Double confidence = responseModel.getConfidence();
+        Double realityScore = responseModel.getRealityScore();
+        String explanation = responseModel.getExplanation();
+        List<ResultResponse.EvidenceItem> evidenceItems = responseModel.getEvidence();
+        String imageUrl = responseModel.getImageUrl();
+
+        // Fallback to nested result object if flat fields are null (backward compatibility)
+        if (verdict == null && responseModel.getResult() != null) {
+            verdict = responseModel.getResult().getVerdict();
+        }
+        if (confidence == null && responseModel.getResult() != null) {
+            confidence = responseModel.getResult().getConfidence();
+        }
+        if (realityScore == null && responseModel.getResult() != null) {
+            realityScore = responseModel.getResult().getRealityScore();
+        }
+        if (explanation == null && responseModel.getResult() != null) {
+            explanation = responseModel.getResult().getExplanation();
+        }
+        if (evidenceItems == null && responseModel.getResult() != null) {
+            evidenceItems = responseModel.getResult().getEvidence();
+        }
+
+        // Set Verdict
+        tvVerdict.setText(verdict != null ? verdict.toUpperCase() : "ANALYSIS COMPLETE");
         
-        if (result.getConfidence() != null) {
-            tvConfidence.setText((int)(result.getConfidence() * 100) + "%");
+        // Set Confidence
+        if (confidence != null) {
+            tvConfidence.setText((int)(confidence * 100) + "%");
+        } else {
+            tvConfidence.setText("N/A");
         }
         
-        if (result.getRealityScore() != null) {
-            tvRealityScore.setText(result.getRealityScore() + "/1.0");
+        // Set Reality Score
+        if (realityScore != null) {
+            tvRealityScore.setText(realityScore + "/1.0");
+        } else {
+            tvRealityScore.setText("N/A");
         }
         
-        tvExplanation.setText(result.getExplanation() != null ? result.getExplanation() : "No explanation available.");
+        // Set Explanation
+        tvExplanation.setText(explanation != null ? explanation : "No explanation available.");
         
+        // Populate Evidence List
         llEvidenceContainer.removeAllViews();
-        List<ResultResponse.EvidenceItem> evidenceItems = result.getEvidence();
         if (evidenceItems != null && !evidenceItems.isEmpty()) {
             LayoutInflater inflater = LayoutInflater.from(this);
             for (ResultResponse.EvidenceItem item : evidenceItems) {
@@ -135,8 +169,8 @@ public class VerificationResultActivity extends AppCompatActivity {
                 TextView tvTitle = itemView.findViewById(R.id.tv_evidence_title);
                 TextView tvSource = itemView.findViewById(R.id.tv_evidence_source);
                 
-                tvTitle.setText(item.getTitle());
-                tvSource.setText("Source: " + item.getSource());
+                tvTitle.setText(item.getTitle() != null ? item.getTitle() : "No Title");
+                tvSource.setText("Source: " + (item.getSource() != null ? item.getSource() : "Unknown"));
 
                 itemView.setOnClickListener(v -> {
                     if (item.getUrl() != null && !item.getUrl().isEmpty()) {
@@ -152,13 +186,18 @@ public class VerificationResultActivity extends AppCompatActivity {
         } else {
             TextView tvEmpty = new TextView(this);
             tvEmpty.setText("No evidence found.");
-            tvEmpty.setTextColor(getResources().getColor(R.color.white));
+            try {
+                tvEmpty.setTextColor(getResources().getColor(R.color.white));
+            } catch (Exception e) {
+                // Ignore if color not found
+            }
             llEvidenceContainer.addView(tvEmpty);
         }
 
-        if (result.getImageUrl() != null && !result.getImageUrl().isEmpty()) {
+        // Load Result Image
+        if (imageUrl != null && !imageUrl.isEmpty()) {
             Glide.with(this)
-                    .load(result.getImageUrl())
+                    .load(imageUrl)
                     .placeholder(android.R.drawable.ic_menu_gallery)
                     .into(ivResultImage);
         }

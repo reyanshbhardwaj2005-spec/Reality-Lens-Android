@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,21 +15,16 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
-
 import com.bumptech.glide.Glide;
+import com.example.realiylens.network.MainResponseModel;
 import com.example.realiylens.network.ResultResponse;
 import com.example.realiylens.network.RetrofitClient;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
-
 import java.util.List;
-import java.util.Locale;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -107,98 +101,97 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void fetchHistory() {
-        String token = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("access_token", "");
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        String token = prefs.getString("access_token", "");
+        
         if (token.isEmpty()) {
-            Log.e(TAG, "Access token is missing");
+            Log.e(TAG, "Access token is missing in SharedPreferences.");
             return;
         }
 
         if (progressBar != null) progressBar.show();
 
-        RetrofitClient.getApiService().getHistory("Bearer " + token).enqueue(new Callback<List<ResultResponse>>() {
+        RetrofitClient.getApiService().getHistory("Bearer " + token).enqueue(new Callback<List<MainResponseModel>>() {
             @Override
-            public void onResponse(Call<List<ResultResponse>> call, Response<List<ResultResponse>> response) {
+            public void onResponse(Call<List<MainResponseModel>> call, Response<List<MainResponseModel>> response) {
                 if (progressBar != null) progressBar.hide();
                 
                 if (response.isSuccessful() && response.body() != null) {
-                    Log.d(TAG, "History successfully fetched: " + response.body().size() + " items");
+                    Log.d(TAG, "History successfully fetched. Count: " + response.body().size());
                     populateHistory(response.body());
                 } else if (response.code() == 401) {
                     logout();
                 } else {
                     Log.e(TAG, "History API error: " + response.code());
-                    Toast.makeText(DashboardActivity.this, "Failed to load history", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(DashboardActivity.this, "Failed to load dashboard history", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<List<ResultResponse>> call, Throwable t) {
+            public void onFailure(Call<List<MainResponseModel>> call, Throwable t) {
                 if (progressBar != null) progressBar.hide();
-                Log.e(TAG, "History network failure: " + t.getMessage());
+                Log.e(TAG, "History fetch network failure: " + t.getMessage());
             }
         });
     }
 
-    private void populateHistory(List<ResultResponse> history) {
-        if (llVerificationsContainer == null) {
-            Log.e(TAG, "llVerificationsContainer is null");
-            return;
-        }
+    private void populateHistory(List<MainResponseModel> history) {
+        if (llVerificationsContainer == null) return;
 
-        // Clear existing items immediately
         llVerificationsContainer.removeAllViews();
         
         if (history == null || history.isEmpty()) {
-            Log.d(TAG, "No history items to display on dashboard");
+            Log.d(TAG, "No history items to display.");
             return;
         }
 
         LayoutInflater inflater = LayoutInflater.from(this);
 
-        for (ResultResponse item : history) {
+        for (MainResponseModel item : history) {
             if (item == null) continue;
 
             View itemView = inflater.inflate(R.layout.item_recent_verification, llVerificationsContainer, false);
 
             TextView tvVerdict = itemView.findViewById(R.id.tv_verdict_badge);
-            TextView tvStats = itemView.findViewById(R.id.tv_stats);
             TextView tvContent = itemView.findViewById(R.id.tv_content_preview);
+            TextView tvStats = itemView.findViewById(R.id.tv_stats);
             TextView tvTimestamp = itemView.findViewById(R.id.tv_timestamp);
             ImageView ivThumbnail = itemView.findViewById(R.id.iv_thumbnail);
 
-            // 1. Map API "verdict" field -> tv_verdict_badge
-            String verdict = item.getVerdict();
-            tvVerdict.setText(verdict != null ? verdict.toUpperCase() : "ANALYZED");
-            
-            // Apply color coding for verdict badge
-            if (verdict != null) {
-                String v = verdict.toUpperCase();
-                if (v.contains("REAL") || v.contains("TRUE")) {
-                    tvVerdict.setTextColor(ContextCompat.getColor(this, R.color.success_green));
-                } else if (v.contains("FAKE") || v.contains("FALSE")) {
-                    tvVerdict.setTextColor(Color.RED);
+            ResultResponse result = item.getResult();
+
+            if (result != null) {
+                // 1. verdict (from nested result object) -> tv_verdict_badge
+                tvVerdict.setText(result.getVerdict() != null ? result.getVerdict().toUpperCase() : "UNKNOWN");
+
+                // 2. claim (from nested result object) -> tv_content_preview
+                String claim = result.getClaim();
+                if (claim != null && !claim.trim().isEmpty()) {
+                    tvContent.setText(claim);
                 } else {
-                    tvVerdict.setTextColor(ContextCompat.getColor(this, R.color.link_color));
+                    tvContent.setText("No captured claim available");
                 }
-            }
 
-            // 2. Map API "claim" field -> tv_content_preview
-            String claim = item.getClaim();
-            tvContent.setText(claim != null && !claim.isEmpty() ? claim : "No captured text available");
-
-            // 3. Map API "reality_score" field -> tv_stats
-            Double score = item.getRealityScore();
-            if (score != null) {
-                tvStats.setText(String.format(Locale.getDefault(), "Score: %.2f", score));
+                // 3. stats (confidence and reality_score from nested result object) -> tv_stats
+                StringBuilder stats = new StringBuilder();
+                if (result.getConfidence() != null) {
+                    stats.append("Conf: ").append((int)(result.getConfidence() * 100)).append("%");
+                }
+                if (result.getRealityScore() != null) {
+                    if (stats.length() > 0) stats.append(" | ");
+                    stats.append("Score: ").append(result.getRealityScore());
+                }
+                tvStats.setText(stats.toString());
             } else {
-                tvStats.setText("Score: N/A");
+                tvVerdict.setText(item.getStatus() != null ? item.getStatus().toUpperCase() : "PENDING");
+                tvContent.setText("Analysis in progress...");
+                tvStats.setText("");
             }
 
-            // 4. Map API "created_at" field -> tv_timestamp
-            String createdAt = item.getCreatedAt();
-            tvTimestamp.setText(createdAt != null ? createdAt : "Recently verified");
+            // 4. created_at (from top level) -> tv_timestamp
+            tvTimestamp.setText(item.getCreatedAt() != null ? item.getCreatedAt() : "Date & Time");
 
-            // Load Image Thumbnail using Glide
+            // 5. image_url (from top level) -> iv_thumbnail
             if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
                 Glide.with(this)
                         .load(item.getImageUrl())
@@ -207,24 +200,19 @@ public class DashboardActivity extends AppCompatActivity {
                         .into(ivThumbnail);
             }
 
-            // Click listener for details navigation
             itemView.setOnClickListener(v -> {
-                if (item.getJobId() != null) {
+                if (item.getId() != null) {
                     Intent intent = new Intent(DashboardActivity.this, VerificationResultActivity.class);
-                    intent.putExtra("job_id", item.getJobId());
+                    intent.putExtra("job_id", item.getId());
                     startActivity(intent);
                 }
             });
 
-            Log.d(TAG, "Binding data for item: " + item.getJobId() + " (Verdict: " + verdict + ")");
             llVerificationsContainer.addView(itemView);
         }
         
-        // Force refresh and ensure visibility
-        llVerificationsContainer.setVisibility(View.VISIBLE);
         llVerificationsContainer.requestLayout();
         llVerificationsContainer.invalidate();
-        Log.d(TAG, "Successfully populated dashboard with " + llVerificationsContainer.getChildCount() + " items");
     }
 
     @Override
