@@ -6,7 +6,7 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/edit_text_bg"
+    android:background="@drawable/drawr"
     android:fitsSystemWindows="true"
     tools:context=".DashboardActivity">
 
@@ -89,13 +89,34 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_recent_verifications_label">
 
-            <LinearLayout
-                android:id="@+id/ll_verifications_container"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingHorizontal="20dp"
-                android:paddingBottom="24dp" />
+                android:layout_height="wrap_content">
+
+                <!-- Skeleton Container -->
+                <LinearLayout
+                    android:id="@+id/ll_skeleton_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="20dp"
+                    android:visibility="gone">
+                    <include layout="@layout/layout_skeleton_item" />
+                    <include layout="@layout/layout_skeleton_item" />
+                    <include layout="@layout/layout_skeleton_item" />
+                    <include layout="@layout/layout_skeleton_item" />
+                </LinearLayout>
+
+                <!-- Actual Data Container -->
+                <LinearLayout
+                    android:id="@+id/ll_verifications_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="20dp"
+                    android:paddingBottom="24dp" />
+
+            </FrameLayout>
 
         </androidx.core.widget.NestedScrollView>
 
@@ -111,6 +132,8 @@
         app:headerLayout="@layout/nav_header"
         app:itemIconTint="@color/white"
         app:itemTextColor="@color/white"
+        app:itemBackground="@android:color/transparent"
+        app:itemRippleColor="@android:color/transparent"
         app:menu="@menu/drawer_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

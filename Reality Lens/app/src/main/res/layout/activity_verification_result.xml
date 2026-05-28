@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/edit_text_bg">
+    android:background="@drawable/drawr">
 
     <!-- High-Visibility Top Loading Bar -->
     <com.google.android.material.progressindicator.LinearProgressIndicator
@@ -57,63 +57,95 @@
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
                     android:scaleType="centerCrop"
+                    android:clickable="true"
+                    android:focusable="true"
                     tools:src="@android:drawable/ic_menu_gallery" />
             </com.google.android.material.card.MaterialCardView>
 
-            <TextView
-                android:id="@+id/label_confidence"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Confidence"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/card_image" />
-
-            <TextView
-                android:id="@+id/tv_confidence"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/label_confidence"
-                tools:text="95%" />
-
+            <!-- Reality Score Section (Top) -->
             <TextView
                 android:id="@+id/label_reality_score"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:text="Reality Score"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_confidence" />
+                app:layout_constraintTop_toBottomOf="@id/card_image" />
 
             <TextView
                 android:id="@+id/tv_reality_score"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/white"
+                android:textColor="@color/text_secondary"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/label_reality_score"
-                tools:text="8.5/10" />
+                tools:text="0.8/1.0" />
 
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/pb_reality_score"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:max="100"
+                app:trackThickness="8dp"
+                app:trackCornerRadius="4dp"
+                app:indicatorColor="@color/gradient_start"
+                app:trackColor="#22FFFFFF"
+                app:layout_constraintTop_toBottomOf="@id/tv_reality_score" />
+
+            <!-- Confidence Section (Below Reality Score) -->
+            <TextView
+                android:id="@+id/label_confidence"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Confidence"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/pb_reality_score" />
+
+            <TextView
+                android:id="@+id/tv_confidence"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/label_confidence"
+                tools:text="95%" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/pb_confidence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:max="100"
+                app:trackThickness="8dp"
+                app:trackCornerRadius="4dp"
+                app:indicatorColor="@color/gradient_end"
+                app:trackColor="#22FFFFFF"
+                app:layout_constraintTop_toBottomOf="@id/tv_confidence" />
+
+            <!-- Explanation Section -->
             <TextView
                 android:id="@+id/label_explanation"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:text="Explanation"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_reality_score" />
+                app:layout_constraintTop_toBottomOf="@id/pb_confidence" />
 
             <TextView
                 android:id="@+id/tv_explanation"
@@ -126,14 +158,16 @@
                 app:layout_constraintTop_toBottomOf="@id/label_explanation"
                 tools:text="Detailed explanation goes here..." />
 
+            <!-- Evidence Section -->
             <TextView
                 android:id="@+id/label_evidence"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:text="Evidence"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tv_explanation" />
 

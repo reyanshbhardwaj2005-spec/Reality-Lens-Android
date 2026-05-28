@@ -203,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
                     try (OutputStream fos = context.getContentResolver().openOutputStream(imageUri)) {
                         if (fos != null) {
                             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
-                            Toast.makeText(context, "Saved to Gallery", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context, "Image has been sent to server. Please wait for the result.", Toast.LENGTH_SHORT).show();
                         }
                     }
                 }
@@ -212,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
                 java.io.File image = new java.io.File(imagesDir, filename);
                 try (OutputStream fos = new java.io.FileOutputStream(image)) {
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
-                    Toast.makeText(context, "Saved to Gallery", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "Image has been sent to server. Please wait for the result.", Toast.LENGTH_SHORT).show();
                 }
             }
         } catch (Exception e) {

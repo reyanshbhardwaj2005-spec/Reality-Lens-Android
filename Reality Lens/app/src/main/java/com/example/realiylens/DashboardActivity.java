@@ -14,8 +14,8 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import com.bumptech.glide.Glide;
@@ -36,6 +36,7 @@ public class DashboardActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private LinearProgressIndicator progressBar;
     private LinearLayout llVerificationsContainer;
+    private LinearLayout llSkeletonContainer;
     private TextView tvUserUsername, tvUserEmail;
 
     private final BroadcastReceiver statusReceiver = new BroadcastReceiver() {
@@ -59,6 +60,7 @@ public class DashboardActivity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawer_layout);
         progressBar = findViewById(R.id.pb_dashboard_loading);
         llVerificationsContainer = findViewById(R.id.ll_verifications_container);
+        llSkeletonContainer = findViewById(R.id.ll_skeleton_container);
         ImageButton btnMenu = findViewById(R.id.btn_hamburger_menu);
         NavigationView navigationView = findViewById(R.id.nav_view_sidebar);
         
@@ -80,11 +82,14 @@ public class DashboardActivity extends AppCompatActivity {
         });
 
         navigationView.setNavigationItemSelectedListener(item -> {
-            if (item.getItemId() == R.id.nav_logout) {
+            int id = item.getItemId();
+            if (id == R.id.nav_logout) {
                 logout();
+            } else if (id == R.id.nav_settings) {
+                startActivity(new Intent(DashboardActivity.this, SettingsActivity.class));
             }
             drawerLayout.closeDrawer(GravityCompat.END);
-            return true;
+            return false; // Return false to prevent the item from staying selected with pink highlight
         });
 
         IntentFilter filter = new IntentFilter();
@@ -148,32 +153,37 @@ public class DashboardActivity extends AppCompatActivity {
             return;
         }
 
-        if (progressBar != null) progressBar.show();
+        // Show skeleton and hide container during load
+        if (llSkeletonContainer != null) llSkeletonContainer.setVisibility(View.VISIBLE);
+        if (llVerificationsContainer != null) llVerificationsContainer.setVisibility(View.GONE);
 
         RetrofitClient.getApiService().getHistory("Bearer " + token).enqueue(new Callback<List<MainResponseModel>>() {
             @Override
             public void onResponse(Call<List<MainResponseModel>> call, Response<List<MainResponseModel>> response) {
-                if (progressBar != null) progressBar.hide();
-                
                 if (response.isSuccessful() && response.body() != null) {
                     populateHistory(response.body());
                 } else if (response.code() == 401) {
                     logout();
                 } else {
                     Log.e(TAG, "History API error: " + response.code());
+                    // Hide skeleton even on error
+                    if (llSkeletonContainer != null) llSkeletonContainer.setVisibility(View.GONE);
                 }
             }
 
             @Override
             public void onFailure(Call<List<MainResponseModel>> call, Throwable t) {
-                if (progressBar != null) progressBar.hide();
+                if (llSkeletonContainer != null) llSkeletonContainer.setVisibility(View.GONE);
                 Log.e(TAG, "History fetch network failure: " + t.getMessage());
             }
         });
     }
 
     private void populateHistory(List<MainResponseModel> history) {
+        if (llSkeletonContainer != null) llSkeletonContainer.setVisibility(View.GONE);
         if (llVerificationsContainer == null) return;
+        
+        llVerificationsContainer.setVisibility(View.VISIBLE);
         llVerificationsContainer.removeAllViews();
         if (history == null || history.isEmpty()) return;
 
@@ -187,23 +197,35 @@ public class DashboardActivity extends AppCompatActivity {
             TextView tvStats = itemView.findViewById(R.id.tv_stats);
             TextView tvTimestamp = itemView.findViewById(R.id.tv_timestamp);
             ImageView ivThumbnail = itemView.findViewById(R.id.iv_thumbnail);
+            LinearProgressIndicator pbRealityScore = itemView.findViewById(R.id.pb_item_reality_score);
 
             ResultResponse result = item.getResult();
             if (result != null) {
-                tvVerdict.setText(result.getVerdict() != null ? result.getVerdict().toUpperCase() : "UNKNOWN");
+                String verdict = result.getVerdict();
+                tvVerdict.setText(verdict != null ? verdict.toUpperCase() : "UNKNOWN");
+                applyVerdictColor(tvVerdict, pbRealityScore, verdict);
+
                 String claim = result.getClaim();
                 tvContent.setText(claim != null && !claim.trim().isEmpty() ? claim : "No captured claim available");
+                
                 StringBuilder stats = new StringBuilder();
-                if (result.getConfidence() != null) stats.append("Conf: ").append((int)(result.getConfidence() * 100)).append("%");
                 if (result.getRealityScore() != null) {
-                    if (stats.length() > 0) stats.append(" | ");
                     stats.append("Score: ").append(result.getRealityScore());
+                    if (pbRealityScore != null) {
+                        pbRealityScore.setProgress((int)(result.getRealityScore() * 100), true);
+                    }
+                }
+                if (result.getConfidence() != null) {
+                    if (stats.length() > 0) stats.append(" | ");
+                    stats.append("Conf: ").append((int)(result.getConfidence() * 100)).append("%");
                 }
                 tvStats.setText(stats.toString());
             } else {
                 tvVerdict.setText(item.getStatus() != null ? item.getStatus().toUpperCase() : "PENDING");
+                tvVerdict.setTextColor(ContextCompat.getColor(this, R.color.white));
                 tvContent.setText("Analysis in progress...");
                 tvStats.setText("");
+                if (pbRealityScore != null) pbRealityScore.setProgress(0);
             }
 
             tvTimestamp.setText(item.getCreatedAt() != null ? item.getCreatedAt() : "Date & Time");
@@ -220,6 +242,35 @@ public class DashboardActivity extends AppCompatActivity {
                 }
             });
             llVerificationsContainer.addView(itemView);
+        }
+    }
+
+    private void applyVerdictColor(TextView tvVerdict, LinearProgressIndicator pbRealityScore, String verdict) {
+        if (verdict == null) return;
+        
+        int colorRes;
+        String v = verdict.toUpperCase();
+        
+        if (v.contains("REAL")) {
+            colorRes = R.color.verdict_real;
+        } else if (v.contains("FAKE")) {
+            colorRes = R.color.verdict_fake;
+        } else if (v.contains("SUSPICIOUS")) {
+            colorRes = R.color.verdict_suspicious;
+        } else if (v.contains("UNVERIFIED")) {
+            colorRes = R.color.verdict_unverified;
+        } else if (v.contains("UNREADABLE")) {
+            colorRes = R.color.verdict_unreadable;
+        } else if (v.contains("SATIRE")) {
+            colorRes = R.color.verdict_satire;
+        } else {
+            colorRes = R.color.white;
+        }
+
+        int color = ContextCompat.getColor(this, colorRes);
+        tvVerdict.setTextColor(color);
+        if (pbRealityScore != null) {
+            pbRealityScore.setIndicatorColor(color);
         }
     }
 

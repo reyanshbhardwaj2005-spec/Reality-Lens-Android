@@ -50,7 +50,7 @@
             <gradient
                 android:type="radial"
                 android:gradientRadius="360"
-                android:startColor="#4434D399"
+                android:startColor="#44144B3B"
                 android:endColor="#00000000"/>
 
         </shape>

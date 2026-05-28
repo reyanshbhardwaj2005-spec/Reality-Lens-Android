@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="16dp"
-    app:cardBackgroundColor="@color/input_background"
+    app:cardBackgroundColor="@android:color/transparent"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
     app:strokeColor="@color/input_stroke"
@@ -14,7 +14,8 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:padding="12dp"
+        android:background="@drawable/secondary_btn_bg">
 
         <!-- Left: Image Thumbnail Container -->
         <com.google.android.material.card.MaterialCardView
@@ -44,7 +45,7 @@
             android:background="@drawable/panel_background"
             android:paddingHorizontal="8dp"
             android:paddingVertical="2dp"
-            android:textColor="@color/link_color"
+            android:textColor="@color/white"
             android:textSize="10sp"
             android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@id/card_thumbnail"
@@ -63,7 +64,20 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/tv_verdict_badge"
             app:layout_constraintTop_toTopOf="@id/tv_verdict_badge"
-            tools:text="Conf: 95% | Score: 0.9" />
+            tools:text="Score: 0.9 | Conf: 95%" />
+
+        <!-- Reality Score Progress Bar -->
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/pb_item_reality_score"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            app:trackThickness="4dp"
+            app:trackCornerRadius="2dp"
+            app:trackColor="#1AFFFFFF"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/tv_verdict_badge"
+            app:layout_constraintTop_toBottomOf="@id/tv_verdict_badge" />
 
         <!-- Content Preview (claim) -->
         <TextView
@@ -77,7 +91,7 @@
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/tv_verdict_badge"
-            app:layout_constraintTop_toBottomOf="@id/tv_verdict_badge"
+            app:layout_constraintTop_toBottomOf="@id/pb_item_reality_score"
             tools:text="The claim text captured from the screen goes here..." />
 
         <!-- Timestamp (created_at) -->
