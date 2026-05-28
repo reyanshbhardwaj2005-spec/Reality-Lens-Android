@@ -18,6 +18,9 @@ public interface ApiService {
     @POST("register")
     Call<LoginResponse> register(@Body RegisterRequest request);
 
+    @GET("me")
+    Call<UserResponse> getUserInfo(@Header("Authorization") String authHeader);
+
     @Multipart
     @POST("submit")
     Call<SubmitResponse> submitImage(

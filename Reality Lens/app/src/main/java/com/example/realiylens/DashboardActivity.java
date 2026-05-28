@@ -22,6 +22,7 @@ import com.bumptech.glide.Glide;
 import com.example.realiylens.network.MainResponseModel;
 import com.example.realiylens.network.ResultResponse;
 import com.example.realiylens.network.RetrofitClient;
+import com.example.realiylens.network.UserResponse;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import java.util.List;
@@ -35,6 +36,7 @@ public class DashboardActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private LinearProgressIndicator progressBar;
     private LinearLayout llVerificationsContainer;
+    private TextView tvUserUsername, tvUserEmail;
 
     private final BroadcastReceiver statusReceiver = new BroadcastReceiver() {
         @Override
@@ -59,8 +61,23 @@ public class DashboardActivity extends AppCompatActivity {
         llVerificationsContainer = findViewById(R.id.ll_verifications_container);
         ImageButton btnMenu = findViewById(R.id.btn_hamburger_menu);
         NavigationView navigationView = findViewById(R.id.nav_view_sidebar);
+        
+        // Initialize Nav Header Views
+        View headerView = navigationView.getHeaderView(0);
+        tvUserUsername = headerView.findViewById(R.id.tv_user_username);
+        tvUserEmail = headerView.findViewById(R.id.tv_user_email);
 
-        btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.END));
+        final boolean[] isRotated = {false};
+
+        btnMenu.setOnClickListener(v -> {
+            if (!isRotated[0]) {
+                btnMenu.animate().rotation(180f).setDuration(300).start();
+            } else {
+                btnMenu.animate().rotation(0f).setDuration(300).start();
+            }
+            isRotated[0] = !isRotated[0];
+            drawerLayout.openDrawer(GravityCompat.END);
+        });
 
         navigationView.setNavigationItemSelectedListener(item -> {
             if (item.getItemId() == R.id.nav_logout) {
@@ -81,7 +98,29 @@ public class DashboardActivity extends AppCompatActivity {
         }
         
         checkAnalysisStatus();
+        fetchUserInfo();
         fetchHistory();
+    }
+
+    private void fetchUserInfo() {
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        String token = prefs.getString("access_token", "");
+        if (token.isEmpty()) return;
+
+        RetrofitClient.getApiService().getUserInfo("Bearer " + token).enqueue(new Callback<UserResponse>() {
+            @Override
+            public void onResponse(Call<UserResponse> call, Response<UserResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    tvUserUsername.setText(response.body().getUsername());
+                    tvUserEmail.setText(response.body().getEmail());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<UserResponse> call, Throwable t) {
+                Log.e(TAG, "Failed to fetch user info: " + t.getMessage());
+            }
+        });
     }
 
     private void logout() {
@@ -117,13 +156,11 @@ public class DashboardActivity extends AppCompatActivity {
                 if (progressBar != null) progressBar.hide();
                 
                 if (response.isSuccessful() && response.body() != null) {
-                    Log.d(TAG, "History successfully fetched. Count: " + response.body().size());
                     populateHistory(response.body());
                 } else if (response.code() == 401) {
                     logout();
                 } else {
                     Log.e(TAG, "History API error: " + response.code());
-                    Toast.makeText(DashboardActivity.this, "Failed to load dashboard history", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -137,19 +174,12 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void populateHistory(List<MainResponseModel> history) {
         if (llVerificationsContainer == null) return;
-
         llVerificationsContainer.removeAllViews();
-        
-        if (history == null || history.isEmpty()) {
-            Log.d(TAG, "No history items to display.");
-            return;
-        }
+        if (history == null || history.isEmpty()) return;
 
         LayoutInflater inflater = LayoutInflater.from(this);
-
         for (MainResponseModel item : history) {
             if (item == null) continue;
-
             View itemView = inflater.inflate(R.layout.item_recent_verification, llVerificationsContainer, false);
 
             TextView tvVerdict = itemView.findViewById(R.id.tv_verdict_badge);
@@ -159,24 +189,12 @@ public class DashboardActivity extends AppCompatActivity {
             ImageView ivThumbnail = itemView.findViewById(R.id.iv_thumbnail);
 
             ResultResponse result = item.getResult();
-
             if (result != null) {
-                // 1. verdict (from nested result object) -> tv_verdict_badge
                 tvVerdict.setText(result.getVerdict() != null ? result.getVerdict().toUpperCase() : "UNKNOWN");
-
-                // 2. claim (from nested result object) -> tv_content_preview
                 String claim = result.getClaim();
-                if (claim != null && !claim.trim().isEmpty()) {
-                    tvContent.setText(claim);
-                } else {
-                    tvContent.setText("No captured claim available");
-                }
-
-                // 3. stats (confidence and reality_score from nested result object) -> tv_stats
+                tvContent.setText(claim != null && !claim.trim().isEmpty() ? claim : "No captured claim available");
                 StringBuilder stats = new StringBuilder();
-                if (result.getConfidence() != null) {
-                    stats.append("Conf: ").append((int)(result.getConfidence() * 100)).append("%");
-                }
+                if (result.getConfidence() != null) stats.append("Conf: ").append((int)(result.getConfidence() * 100)).append("%");
                 if (result.getRealityScore() != null) {
                     if (stats.length() > 0) stats.append(" | ");
                     stats.append("Score: ").append(result.getRealityScore());
@@ -188,16 +206,10 @@ public class DashboardActivity extends AppCompatActivity {
                 tvStats.setText("");
             }
 
-            // 4. created_at (from top level) -> tv_timestamp
             tvTimestamp.setText(item.getCreatedAt() != null ? item.getCreatedAt() : "Date & Time");
 
-            // 5. image_url (from top level) -> iv_thumbnail
             if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-                Glide.with(this)
-                        .load(item.getImageUrl())
-                        .placeholder(android.R.drawable.ic_menu_gallery)
-                        .error(android.R.drawable.ic_menu_gallery)
-                        .into(ivThumbnail);
+                Glide.with(this).load(item.getImageUrl()).placeholder(android.R.drawable.ic_menu_gallery).error(android.R.drawable.ic_menu_gallery).into(ivThumbnail);
             }
 
             itemView.setOnClickListener(v -> {
@@ -207,18 +219,15 @@ public class DashboardActivity extends AppCompatActivity {
                     startActivity(intent);
                 }
             });
-
             llVerificationsContainer.addView(itemView);
         }
-        
-        llVerificationsContainer.requestLayout();
-        llVerificationsContainer.invalidate();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         checkAnalysisStatus();
+        fetchUserInfo();
         fetchHistory();
     }
 

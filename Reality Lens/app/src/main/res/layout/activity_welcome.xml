@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/login_background"
+    android:background="@drawable/background"
     android:padding="24dp"
     tools:context=".WelcomeActivity">
 
@@ -48,7 +48,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
-        android:background="@drawable/panel_background"
+        android:background="@drawable/secondary_btn_bg"
         android:padding="24dp"
         app:layout_constraintTop_toBottomOf="@id/tv_running_status">
 
@@ -99,37 +99,41 @@
         android:orientation="horizontal"
         app:layout_constraintTop_toBottomOf="@id/instruction_panel">
 
-        <androidx.appcompat.widget.AppCompatButton
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_minimize"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="60dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:background="@drawable/google_btn_bg"
-            android:drawableStart="@android:drawable/ic_menu_close_clear_cancel"
-            android:drawablePadding="-15dp"
-            android:paddingStart="15dp"
-            android:text="Minimize to Tray"
+            android:background="@drawable/hamburger_menu"
+            app:backgroundTint="@null"
+            android:text="Minimize"
             android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            app:icon="@android:drawable/ic_menu_close_clear_cancel"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="@color/white" />
 
-        <androidx.appcompat.widget.AppCompatButton
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_open_dashboard"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="60dp"
             android:layout_marginStart="8dp"
             android:layout_weight="1.2"
-            android:background="@drawable/btn_gradient"
-            android:drawableStart="@android:drawable/ic_dialog_dialer"
-            android:drawablePadding="-15dp"
-            android:paddingStart="15dp"
-            android:text="Open Dashboard"
+            android:background="@drawable/hamburger_menu"
+            app:backgroundTint="@null"
+            android:text="Dashboard"
             android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            app:icon="@android:drawable/ic_dialog_dialer"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="@color/white" />
 
     </LinearLayout>
 

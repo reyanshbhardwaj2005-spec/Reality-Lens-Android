@@ -24,41 +24,27 @@ public class SnippingTileService extends TileService {
     @Override
     public void onClick() {
         super.onClick();
-        
+
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("START_SNIP", true);
-        // Ensure the activity is brought to the front
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
-        if (Build.VERSION.SDK_INT >= 34) { // Android 14+ (UPSIDE_DOWN_CAKE)
-            // Mandatory for Android 14+ to allow background activity start from a Tile
-            ActivityOptions options = ActivityOptions.makeBasic();
-            options.setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED);
-            
-            PendingIntent pendingIntent = PendingIntent.getActivity(
-                    this, 
-                    1001, 
-                    intent, 
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE,
-                    options.toBundle()
-            );
+        intent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK |
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+        );
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                1001,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startActivityAndCollapse(pendingIntent);
         } else {
-            // Fallback for older Android versions
-            try {
-                startActivityAndCollapse(intent);
-            } catch (Exception e) {
-                // Some Android 12/13 devices also prefer PendingIntent
-                PendingIntent pendingIntent = PendingIntent.getActivity(
-                        this, 
-                        1001, 
-                        intent, 
-                        PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_IMMUTABLE : 0)
-                );
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    startActivityAndCollapse(pendingIntent);
-                }
-            }
+            startActivityAndCollapse(intent);
         }
     }
 }

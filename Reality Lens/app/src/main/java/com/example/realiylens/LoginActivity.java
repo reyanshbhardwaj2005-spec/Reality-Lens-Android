@@ -1,10 +1,17 @@
 package com.example.realiylens;
 
+import android.app.StatusBarManager;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.method.PasswordTransformationMethod;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,6 +19,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.realiylens.network.LoginRequest;
 import com.example.realiylens.network.LoginResponse;
 import com.example.realiylens.network.RetrofitClient;
+
+import java.util.concurrent.Executor;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -22,9 +31,22 @@ public class LoginActivity extends AppCompatActivity {
     private EditText etEmail, etPassword;
     private Button btnContinue, btnGoogle, btnRegister;
 
+    private ImageView iv_password_toggle;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Persistent Login Check: If token exists, skip Login and go to WelcomeActivity
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        String savedToken = prefs.getString("access_token", null);
+        if (savedToken != null && !savedToken.isEmpty()) {
+            Intent intent = new Intent(LoginActivity.this, WelcomeActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_login);
 
         // Initialize views
@@ -33,6 +55,10 @@ public class LoginActivity extends AppCompatActivity {
         btnContinue = findViewById(R.id.btn_continue);
         btnGoogle = findViewById(R.id.btn_google);
         btnRegister = findViewById(R.id.btn_register);
+        iv_password_toggle = findViewById(R.id.iv_password_toggle);
+
+        // Check and request to add Quick Settings Tile on first install/run
+        requestAddQuickSettingsTile();
 
         // Set up click listeners
         btnContinue.setOnClickListener(v -> {
@@ -46,6 +72,21 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+
+        iv_password_toggle.setOnClickListener(v -> {
+            if (etPassword.getTransformationMethod() instanceof PasswordTransformationMethod) {
+                // Show password
+                etPassword.setTransformationMethod(null);
+            } else {
+                // Hide password
+                etPassword.setTransformationMethod(new PasswordTransformationMethod());
+            }
+            // Move cursor to the end of the text
+            etPassword.setSelection(etPassword.getText().length());
+        });
+
+
+
         btnGoogle.setOnClickListener(v -> {
             Toast.makeText(this, "Google Sign-In clicked", Toast.LENGTH_SHORT).show();
         });
@@ -54,6 +95,36 @@ public class LoginActivity extends AppCompatActivity {
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
             startActivity(intent);
         });
+    }
+
+    private void requestAddQuickSettingsTile() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+            boolean tileRequested = prefs.getBoolean("tile_requested", false);
+
+            if (!tileRequested) {
+                StatusBarManager statusBarManager = getSystemService(StatusBarManager.class);
+                if (statusBarManager != null) {
+                    ComponentName componentName = new ComponentName(this, SnippingTileService.class);
+                    Icon icon = Icon.createWithResource(this, R.mipmap.ic_launcher);
+                    String label = "Snip Area";
+
+                    Executor executor = getMainExecutor();
+                    statusBarManager.requestAddTileService(
+                            componentName,
+                            label,
+                            icon,
+                            executor,
+                            result -> {
+                                if (result == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED || 
+                                    result == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED) {
+                                    prefs.edit().putBoolean("tile_requested", true).apply();
+                                }
+                            }
+                    );
+                }
+            }
+        }
     }
 
     private void performLogin(String email, String password) {
@@ -72,7 +143,7 @@ public class LoginActivity extends AppCompatActivity {
                     SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
                     prefs.edit().putString("access_token", token).apply();
 
-                    Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
                     
                     // Navigate to WelcomeActivity
                     Intent intent = new Intent(LoginActivity.this, WelcomeActivity.class);
