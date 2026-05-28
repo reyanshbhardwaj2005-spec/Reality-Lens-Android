@@ -27,13 +27,13 @@
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:src="@android:drawable/ic_media_previous"
-                app:tint="#BDBDBD" />
+                app:tint="?attr/textSecondary" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Back to Dashboard"
-                android:textColor="#BDBDBD"
+                android:textColor="?attr/textSecondary"
                 android:textSize="16sp"
                 android:layout_marginStart="8dp"/>
         </LinearLayout>
@@ -43,7 +43,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Settings"
-            android:textColor="#FFFFFF"
+            android:textColor="?attr/textPrimary"
             android:textStyle="bold"
             android:textSize="32sp"/>
 
@@ -51,7 +51,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Manage your RealityLens preferences"
-            android:textColor="#9E9E9E"
+            android:textColor="?attr/textSecondary"
             android:textSize="16sp"
             android:layout_marginTop="6dp"
             android:layout_marginBottom="32dp"/>
@@ -61,7 +61,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Appearance"
-            android:textColor="#FFFFFF"
+            android:textColor="?attr/textPrimary"
             android:textStyle="bold"
             android:textSize="22sp"
             android:layout_marginBottom="14dp"/>
@@ -73,7 +73,7 @@
             app:cardCornerRadius="18dp"
             app:cardBackgroundColor="@android:color/transparent"
             app:cardElevation="0dp"
-            app:strokeColor="#1F1F1F"
+            app:strokeColor="?attr/cardStrokeColor"
             app:strokeWidth="1dp"
             android:layout_marginBottom="28dp">
 
@@ -95,7 +95,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@android:drawable/ic_menu_gallery"
-                        app:tint="#FFFFFF" />
+                        app:tint="?attr/textPrimary" />
                 </LinearLayout>
 
                 <!-- Text -->
@@ -110,7 +110,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Dark Mode"
-                        android:textColor="#FFFFFF"
+                        android:textColor="?attr/textPrimary"
                         android:textSize="20sp"
                         android:textStyle="bold"/>
 
@@ -118,7 +118,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Use dark theme throughout the app"
-                        android:textColor="#9E9E9E"
+                        android:textColor="?attr/textSecondary"
                         android:textSize="14sp"
                         android:layout_marginTop="4dp"/>
                 </LinearLayout>
@@ -127,14 +127,14 @@
                 <Switch
                     android:id="@+id/switchDarkMode"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"/>
+                    android:layout_height="wrap_content" />
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>
 
         <!-- Logout Card -->
         <androidx.cardview.widget.CardView
+            android:id="@+id/cv_logout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="18dp"
@@ -143,9 +143,8 @@
             app:strokeColor="#8B0000"
             app:strokeWidth="1dp"
             android:layout_marginBottom="28dp"
-            android:background="@drawable/secondary_btn_bg"
             android:clickable="true"
-            android:id="@+id/cv_logout">
+            android:focusable="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -200,7 +199,7 @@
             app:cardCornerRadius="18dp"
             app:cardBackgroundColor="@android:color/transparent"
             app:cardElevation="0dp"
-            app:strokeColor="#1F1F1F"
+            app:strokeColor="?attr/cardStrokeColor"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -208,8 +207,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:padding="20dp"
-                android:background="@drawable/secondary_btn_bg"
-                >
+                android:background="@drawable/secondary_btn_bg">
 
                 <LinearLayout
                     android:layout_width="52dp"
@@ -220,7 +218,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@android:drawable/ic_dialog_info"
-                        app:tint="#FFFFFF" />
+                        app:tint="?attr/textPrimary" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -234,7 +232,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="About RealityLens"
-                        android:textColor="#FFFFFF"
+                        android:textColor="?attr/textPrimary"
                         android:textSize="20sp"
                         android:textStyle="bold"/>
 
@@ -242,7 +240,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Version 1.0.0"
-                        android:textColor="#9E9E9E"
+                        android:textColor="?attr/textSecondary"
                         android:textSize="14sp"
                         android:layout_marginTop="4dp"/>
 
@@ -250,7 +248,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="AI-powered fact verification for the modern internet. Built with cutting-edge technology to help you navigate truth in a complex information landscape."
-                        android:textColor="#9E9E9E"
+                        android:textColor="?attr/textSecondary"
                         android:textSize="14sp"
                         android:layout_marginTop="14dp"/>
                 </LinearLayout>

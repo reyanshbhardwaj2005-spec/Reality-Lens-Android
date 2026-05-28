@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".RealityLensApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -21,7 +22,7 @@
         android:theme="@style/Theme.RealiyLens">
 
         <activity
-            android:name=".LoginActivity"
+            android:name=".WelcomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -30,11 +31,11 @@
         </activity>
 
         <activity
-            android:name=".RegisterActivity"
-            android:exported="false" />
+            android:name=".LoginActivity"
+            android:exported="true" />
 
         <activity
-            android:name=".WelcomeActivity"
+            android:name=".RegisterActivity"
             android:exported="false" />
 
         <activity

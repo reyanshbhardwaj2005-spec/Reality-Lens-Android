@@ -9,7 +9,7 @@
     android:focusable="true"
     app:cardBackgroundColor="@android:color/transparent"
     app:cardCornerRadius="12dp"
-    app:strokeColor="@color/input_stroke"
+    app:strokeColor="?attr/cardStrokeColor"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -23,7 +23,7 @@
             android:id="@+id/tv_evidence_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
+            android:textColor="?attr/textPrimary"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -32,7 +32,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/textSecondary"
             android:textSize="14sp" />
 
     </LinearLayout>

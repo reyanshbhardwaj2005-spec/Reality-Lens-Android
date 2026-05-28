@@ -5,6 +5,17 @@
         <item name="colorPrimary">@color/gradient_start</item>
         <!-- Fix yellow autofill highlight -->
         <item name="android:autofilledHighlight" tools:targetApi="26">@android:color/transparent</item>
+
+        <!-- Custom Attributes for Light Mode -->
+        <item name="mainBackground">#F8F9FA</item>
+        <item name="secondaryBackground">#FFFFFF</item>
+        <item name="textPrimary">#1A1A1A</item>
+        <item name="textSecondary">#666666</item>
+        <item name="cardStrokeColor">#E0E0E0</item>
+
+        <item name="gradientStart">#F0F4F8</item>
+        <item name="gradientCenter">#E2E8F0</item>
+        <item name="gradientEnd">#CBD5E1</item>
     </style>
 
     <style name="Theme.RealiyLens" parent="Base.Theme.RealiyLens" />

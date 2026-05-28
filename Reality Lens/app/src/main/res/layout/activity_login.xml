@@ -27,7 +27,7 @@
         app:layout_constraintEnd_toEndOf="@id/logo_bg"
         app:layout_constraintStart_toStartOf="@id/logo_bg"
         app:layout_constraintTop_toTopOf="@id/logo_bg"
-        app:tint="@color/white" />
+        app:tint="?attr/textPrimary" />
 
     <TextView
         android:id="@+id/tv_app_name"
@@ -35,7 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="RealityLens"
-        android:textColor="@color/white"
+        android:textColor="?attr/textPrimary"
         android:textSize="28sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -48,7 +48,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="AI-powered fact verification for the modern internet"
-        android:textColor="@color/text_secondary"
+        android:textColor="?attr/textSecondary"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -60,7 +60,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:text="Email"
-        android:textColor="@color/white"
+        android:textColor="?attr/textPrimary"
         android:textSize="14sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
@@ -77,8 +77,8 @@
         android:hint="you@example.com"
         android:inputType="textEmailAddress"
         android:paddingHorizontal="16dp"
-        android:textColor="@color/white"
-        android:textColorHint="@color/text_secondary"
+        android:textColor="?attr/textPrimary"
+        android:textColorHint="?attr/textSecondary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/label_email" />
@@ -89,7 +89,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:text="Password"
-        android:textColor="@color/white"
+        android:textColor="?attr/textPrimary"
         android:textSize="14sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
@@ -107,8 +107,8 @@
         android:inputType="textPassword"
         android:paddingStart="16dp"
         android:paddingEnd="48dp"
-        android:textColor="@color/white"
-        android:textColorHint="@color/text_secondary"
+        android:textColor="?attr/textPrimary"
+        android:textColorHint="?attr/textSecondary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/label_password" />
@@ -125,7 +125,7 @@
         app:layout_constraintBottom_toBottomOf="@id/et_password"
         app:layout_constraintEnd_toEndOf="@id/et_password"
         app:layout_constraintTop_toTopOf="@id/et_password"
-        app:tint="@color/text_secondary" />
+        app:tint="?attr/textSecondary" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btn_continue"
@@ -157,21 +157,21 @@
             android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_weight="1"
-            android:background="@color/input_stroke" />
+            android:background="?attr/cardStrokeColor" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingHorizontal="16dp"
             android:text="or"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/textSecondary"
             android:textSize="12sp" />
 
         <View
             android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_weight="1"
-            android:background="@color/input_stroke" />
+            android:background="?attr/cardStrokeColor" />
     </LinearLayout>
 
     <androidx.appcompat.widget.AppCompatButton
@@ -182,7 +182,7 @@
         android:background="@drawable/secondary_btn_bg"
         android:text="Continue with Google"
         android:textAllCaps="false"
-        android:textColor="@color/white"
+        android:textColor="?attr/textPrimary"
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -203,7 +203,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="not Registerd yet? "
-            android:textColor="@color/text_secondary" />
+            android:textColor="?attr/textSecondary" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_register"

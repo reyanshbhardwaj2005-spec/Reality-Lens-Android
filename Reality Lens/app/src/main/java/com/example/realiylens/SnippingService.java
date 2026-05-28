@@ -302,13 +302,25 @@ public class SnippingService extends Service {
                     retryPolling(jobId, authHeader);
                 } else if (response.isSuccessful() && response.body() != null) {
                     MainResponseModel responseModel = response.body();
-                    ResultResponse result = responseModel.getResult();
-                    if (result != null) {
-                        String verdict = result.getVerdict() != null ? result.getVerdict().toUpperCase() : "Analysis Complete";
-                        showResultNotification(jobId, verdict, "Tap to view details.", result.getConfidence(), result.getRealityScore());
-                    } else {
-                        showResultNotification(jobId, "Analysis Complete", "Tap to view details.", null, null);
+                    
+                    // Support both flat fields and nested result object
+                    String verdict = responseModel.getVerdict();
+                    Double confidence = responseModel.getConfidence();
+                    Double realityScore = responseModel.getRealityScore();
+                    
+                    if (verdict == null && responseModel.getResult() != null) {
+                        verdict = responseModel.getResult().getVerdict();
                     }
+                    if (confidence == null && responseModel.getResult() != null) {
+                        confidence = responseModel.getResult().getConfidence();
+                    }
+                    if (realityScore == null && responseModel.getResult() != null) {
+                        realityScore = responseModel.getResult().getRealityScore();
+                    }
+                    
+                    String verdictText = verdict != null ? verdict.toUpperCase() : "Analysis Complete";
+                    showResultNotification(jobId, verdictText, "Tap to view details.", confidence, realityScore);
+
                     setAnalyzingState(false);
                     stopSelf();
                 } else {

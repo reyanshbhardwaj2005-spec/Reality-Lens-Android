@@ -25,7 +25,7 @@
             android:layout_marginTop="32dp"
             app:indicatorColor="@color/link_color"
             app:layout_constraintTop_toTopOf="parent"
-            app:trackColor="#40FFFFFF"
+            app:trackColor="?attr/cardStrokeColor"
             app:trackThickness="10dp"
             android:elevation="50dp" />
 
@@ -46,8 +46,8 @@
                 android:drawablePadding="12dp"
                 android:hint="Search verifications..."
                 android:paddingHorizontal="16dp"
-                android:textColor="@color/white"
-                android:textColorHint="@color/text_secondary"
+                android:textColor="?attr/textPrimary"
+                android:textColorHint="?attr/textSecondary"
                 android:textSize="14sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/btn_hamburger_menu"
@@ -63,7 +63,7 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="@color/white" />
+                app:tint="?attr/textPrimary" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -74,7 +74,7 @@
             android:layout_marginStart="20dp"
             android:layout_marginTop="16dp"
             android:text="Recent Verifications"
-            android:textColor="@color/white"
+            android:textColor="?attr/textPrimary"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -93,28 +93,29 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <!-- Skeleton Container -->
+                <!-- Skeleton Container - Set to VISIBLE by default -->
                 <LinearLayout
                     android:id="@+id/ll_skeleton_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:paddingHorizontal="20dp"
-                    android:visibility="gone">
+                    android:visibility="visible">
                     <include layout="@layout/layout_skeleton_item" />
                     <include layout="@layout/layout_skeleton_item" />
                     <include layout="@layout/layout_skeleton_item" />
                     <include layout="@layout/layout_skeleton_item" />
                 </LinearLayout>
 
-                <!-- Actual Data Container -->
+                <!-- Actual Data Container - Set to GONE by default -->
                 <LinearLayout
                     android:id="@+id/ll_verifications_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:paddingHorizontal="20dp"
-                    android:paddingBottom="24dp" />
+                    android:paddingBottom="24dp"
+                    android:visibility="gone" />
 
             </FrameLayout>
 
@@ -130,8 +131,8 @@
         android:layout_gravity="end"
         android:background="@drawable/drawr"
         app:headerLayout="@layout/nav_header"
-        app:itemIconTint="@color/white"
-        app:itemTextColor="@color/white"
+        app:itemIconTint="?attr/textPrimary"
+        app:itemTextColor="?attr/textPrimary"
         app:itemBackground="@android:color/transparent"
         app:itemRippleColor="@android:color/transparent"
         app:menu="@menu/drawer_menu" />

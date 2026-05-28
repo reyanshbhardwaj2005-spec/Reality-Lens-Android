@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="mainBackground" format="reference|color" />
+    <attr name="secondaryBackground" format="reference|color" />
+    <attr name="textPrimary" format="reference|color" />
+    <attr name="textSecondary" format="reference|color" />
+    <attr name="cardStrokeColor" format="reference|color" />
+
+    <!-- Gradient Background Colors -->
+    <attr name="gradientStart" format="color" />
+    <attr name="gradientCenter" format="color" />
+    <attr name="gradientEnd" format="color" />
+</resources>

@@ -25,7 +25,11 @@ import com.example.realiylens.network.RetrofitClient;
 import com.example.realiylens.network.UserResponse;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -64,7 +68,6 @@ public class DashboardActivity extends AppCompatActivity {
         ImageButton btnMenu = findViewById(R.id.btn_hamburger_menu);
         NavigationView navigationView = findViewById(R.id.nav_view_sidebar);
         
-        // Initialize Nav Header Views
         View headerView = navigationView.getHeaderView(0);
         tvUserUsername = headerView.findViewById(R.id.tv_user_username);
         tvUserEmail = headerView.findViewById(R.id.tv_user_email);
@@ -89,7 +92,7 @@ public class DashboardActivity extends AppCompatActivity {
                 startActivity(new Intent(DashboardActivity.this, SettingsActivity.class));
             }
             drawerLayout.closeDrawer(GravityCompat.END);
-            return false; // Return false to prevent the item from staying selected with pink highlight
+            return false;
         });
 
         IntentFilter filter = new IntentFilter();
@@ -120,7 +123,6 @@ public class DashboardActivity extends AppCompatActivity {
                     tvUserEmail.setText(response.body().getEmail());
                 }
             }
-
             @Override
             public void onFailure(Call<UserResponse> call, Throwable t) {
                 Log.e(TAG, "Failed to fetch user info: " + t.getMessage());
@@ -148,33 +150,22 @@ public class DashboardActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         String token = prefs.getString("access_token", "");
         
-        if (token.isEmpty()) {
-            Log.e(TAG, "Access token is missing in SharedPreferences.");
-            return;
-        }
-
-        // Show skeleton and hide container during load
-        if (llSkeletonContainer != null) llSkeletonContainer.setVisibility(View.VISIBLE);
-        if (llVerificationsContainer != null) llVerificationsContainer.setVisibility(View.GONE);
+        if (token.isEmpty()) return;
 
         RetrofitClient.getApiService().getHistory("Bearer " + token).enqueue(new Callback<List<MainResponseModel>>() {
             @Override
             public void onResponse(Call<List<MainResponseModel>> call, Response<List<MainResponseModel>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     populateHistory(response.body());
-                } else if (response.code() == 401) {
-                    logout();
                 } else {
-                    Log.e(TAG, "History API error: " + response.code());
-                    // Hide skeleton even on error
                     if (llSkeletonContainer != null) llSkeletonContainer.setVisibility(View.GONE);
+                    if (response.code() == 401) logout();
                 }
             }
 
             @Override
             public void onFailure(Call<List<MainResponseModel>> call, Throwable t) {
                 if (llSkeletonContainer != null) llSkeletonContainer.setVisibility(View.GONE);
-                Log.e(TAG, "History fetch network failure: " + t.getMessage());
             }
         });
     }
@@ -185,13 +176,13 @@ public class DashboardActivity extends AppCompatActivity {
         
         llVerificationsContainer.setVisibility(View.VISIBLE);
         llVerificationsContainer.removeAllViews();
+        
         if (history == null || history.isEmpty()) return;
 
         LayoutInflater inflater = LayoutInflater.from(this);
         for (MainResponseModel item : history) {
-            if (item == null) continue;
             View itemView = inflater.inflate(R.layout.item_recent_verification, llVerificationsContainer, false);
-
+            
             TextView tvVerdict = itemView.findViewById(R.id.tv_verdict_badge);
             TextView tvContent = itemView.findViewById(R.id.tv_content_preview);
             TextView tvStats = itemView.findViewById(R.id.tv_stats);
@@ -199,61 +190,88 @@ public class DashboardActivity extends AppCompatActivity {
             ImageView ivThumbnail = itemView.findViewById(R.id.iv_thumbnail);
             LinearProgressIndicator pbRealityScore = itemView.findViewById(R.id.pb_item_reality_score);
 
-            ResultResponse result = item.getResult();
-            if (result != null) {
-                String verdict = result.getVerdict();
-                tvVerdict.setText(verdict != null ? verdict.toUpperCase() : "UNKNOWN");
-                applyVerdictColor(tvVerdict, pbRealityScore, verdict);
+            // Fetch data with fallbacks (support both flat and nested structures)
+            String verdict = item.getVerdict();
+            String claim = item.getClaim();
+            Double realityScore = item.getRealityScore();
+            Double confidence = item.getConfidence();
 
-                String claim = result.getClaim();
-                tvContent.setText(claim != null && !claim.trim().isEmpty() ? claim : "No captured claim available");
-                
-                StringBuilder stats = new StringBuilder();
-                if (result.getRealityScore() != null) {
-                    stats.append("Score: ").append(result.getRealityScore());
-                    if (pbRealityScore != null) {
-                        pbRealityScore.setProgress((int)(result.getRealityScore() * 100), true);
-                    }
-                }
-                if (result.getConfidence() != null) {
-                    if (stats.length() > 0) stats.append(" | ");
-                    stats.append("Conf: ").append((int)(result.getConfidence() * 100)).append("%");
-                }
-                tvStats.setText(stats.toString());
-            } else {
-                tvVerdict.setText(item.getStatus() != null ? item.getStatus().toUpperCase() : "PENDING");
-                tvVerdict.setTextColor(ContextCompat.getColor(this, R.color.white));
-                tvContent.setText("Analysis in progress...");
-                tvStats.setText("");
-                if (pbRealityScore != null) pbRealityScore.setProgress(0);
+            if (item.getResult() != null) {
+                if (verdict == null) verdict = item.getResult().getVerdict();
+                if (claim == null) claim = item.getResult().getClaim();
+                if (realityScore == null) realityScore = item.getResult().getRealityScore();
+                if (confidence == null) confidence = item.getResult().getConfidence();
             }
 
-            tvTimestamp.setText(item.getCreatedAt() != null ? item.getCreatedAt() : "Date & Time");
+            // Set UI components
+            tvVerdict.setText(verdict != null ? verdict.toUpperCase() : "ANALYZED");
+            applyVerdictColor(tvVerdict, pbRealityScore, verdict);
+            tvContent.setText(claim != null ? claim : "No captured claim available");
+            
+            StringBuilder stats = new StringBuilder();
+            if (realityScore != null) {
+                stats.append("Score: ").append(String.format(Locale.getDefault(), "%.1f", realityScore));
+            }
+            if (confidence != null) {
+                if (stats.length() > 0) stats.append(" | ");
+                stats.append("Conf: ").append((int)(confidence * 100)).append("%");
+            }
+            tvStats.setText(stats.toString());
 
+            if (realityScore != null && pbRealityScore != null) {
+                pbRealityScore.setProgress((int)(realityScore * 100));
+            } else if (pbRealityScore != null) {
+                pbRealityScore.setProgress(0);
+            }
+
+            tvTimestamp.setText(formatDate(item.getCreatedAt()));
             if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-                Glide.with(this).load(item.getImageUrl()).placeholder(android.R.drawable.ic_menu_gallery).error(android.R.drawable.ic_menu_gallery).into(ivThumbnail);
+                Glide.with(this).load(item.getImageUrl()).into(ivThumbnail);
             }
 
+            // Click listener to navigate to detailed view
             itemView.setOnClickListener(v -> {
-                if (item.getId() != null) {
-                    Intent intent = new Intent(DashboardActivity.this, VerificationResultActivity.class);
-                    intent.putExtra("job_id", item.getId());
-                    startActivity(intent);
-                }
+                Intent intent = new Intent(DashboardActivity.this, VerificationResultActivity.class);
+                intent.putExtra("job_id", item.getId());
+                startActivity(intent);
             });
+
             llVerificationsContainer.addView(itemView);
+        }
+    }
+
+    private String formatDate(String dateString) {
+        if (dateString == null || dateString.isEmpty()) return "Date & Time";
+        
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+            SimpleDateFormat inputFormatWithMs = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault());
+            
+            Date date;
+            try {
+                date = inputFormat.parse(dateString);
+            } catch (Exception e) {
+                date = inputFormatWithMs.parse(dateString);
+            }
+
+            if (date == null) return dateString;
+
+            SimpleDateFormat outputFormat = new SimpleDateFormat("M/d/yyyy, h:mm:ss a", Locale.getDefault());
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing date: " + dateString, e);
+            return dateString;
         }
     }
 
     private void applyVerdictColor(TextView tvVerdict, LinearProgressIndicator pbRealityScore, String verdict) {
         if (verdict == null) return;
-        
-        int colorRes;
+        int colorRes = R.color.white;
         String v = verdict.toUpperCase();
         
-        if (v.contains("REAL")) {
+        if (v.contains("LIKELY REAL") || v.equals("REAL")) {
             colorRes = R.color.verdict_real;
-        } else if (v.contains("FAKE")) {
+        } else if (v.contains("LIKELY FAKE") || v.equals("FAKE")) {
             colorRes = R.color.verdict_fake;
         } else if (v.contains("SUSPICIOUS")) {
             colorRes = R.color.verdict_suspicious;
@@ -263,21 +281,16 @@ public class DashboardActivity extends AppCompatActivity {
             colorRes = R.color.verdict_unreadable;
         } else if (v.contains("SATIRE")) {
             colorRes = R.color.verdict_satire;
-        } else {
-            colorRes = R.color.white;
         }
-
+        
         int color = ContextCompat.getColor(this, colorRes);
         tvVerdict.setTextColor(color);
-        if (pbRealityScore != null) {
-            pbRealityScore.setIndicatorColor(color);
-        }
+        if (pbRealityScore != null) pbRealityScore.setIndicatorColor(color);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        checkAnalysisStatus();
         fetchUserInfo();
         fetchHistory();
     }

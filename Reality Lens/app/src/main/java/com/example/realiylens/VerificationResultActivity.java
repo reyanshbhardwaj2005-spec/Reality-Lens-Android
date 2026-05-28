@@ -32,7 +32,7 @@ import retrofit2.Response;
 
 public class VerificationResultActivity extends AppCompatActivity {
 
-    private TextView tvVerdict, tvConfidence, tvRealityScore, tvExplanation;
+    private TextView tvVerdict, tvConfidence, tvRealityScore, tvExplanation, tvClaim;
     private LinearProgressIndicator pbConfidence, pbRealityScore;
     private LinearLayout llEvidenceContainer;
     private ImageView ivResultImage;
@@ -52,6 +52,7 @@ public class VerificationResultActivity extends AppCompatActivity {
 
         // Initialize views
         tvVerdict = findViewById(R.id.tv_verdict);
+        tvClaim = findViewById(R.id.tv_claim);
         ivResultImage = findViewById(R.id.iv_result_image);
         tvConfidence = findViewById(R.id.tv_confidence);
         tvRealityScore = findViewById(R.id.tv_reality_score);
@@ -151,6 +152,7 @@ public class VerificationResultActivity extends AppCompatActivity {
     private void displayData(MainResponseModel responseModel) {
         // Fetch data from flat fields (new API structure)
         String verdict = responseModel.getVerdict();
+        String claim = responseModel.getClaim();
         Double confidence = responseModel.getConfidence();
         Double realityScore = responseModel.getRealityScore();
         String explanation = responseModel.getExplanation();
@@ -160,6 +162,9 @@ public class VerificationResultActivity extends AppCompatActivity {
         // Fallback to nested result object if flat fields are null (backward compatibility)
         if (verdict == null && responseModel.getResult() != null) {
             verdict = responseModel.getResult().getVerdict();
+        }
+        if (claim == null && responseModel.getResult() != null) {
+            claim = responseModel.getResult().getClaim();
         }
         if (confidence == null && responseModel.getResult() != null) {
             confidence = responseModel.getResult().getConfidence();
@@ -181,6 +186,11 @@ public class VerificationResultActivity extends AppCompatActivity {
         } else {
             tvVerdict.setText("ANALYSIS COMPLETE");
             tvVerdict.setTextColor(ContextCompat.getColor(this, R.color.white));
+        }
+
+        // Set Claim
+        if (tvClaim != null) {
+            tvClaim.setText(claim != null ? claim : "No captured claim available");
         }
         
         // Set Confidence
@@ -254,12 +264,13 @@ public class VerificationResultActivity extends AppCompatActivity {
     }
 
     private void applyVerdictColor(String verdict) {
-        int colorRes;
+        if (verdict == null) return;
+        int colorRes = R.color.white;
         String v = verdict.toUpperCase();
         
-        if (v.contains("REAL")) {
+        if (v.contains("LIKELY REAL") || v.equals("REAL")) {
             colorRes = R.color.verdict_real;
-        } else if (v.contains("FAKE")) {
+        } else if (v.contains("LIKELY FAKE") || v.equals("FAKE")) {
             colorRes = R.color.verdict_fake;
         } else if (v.contains("SUSPICIOUS")) {
             colorRes = R.color.verdict_suspicious;
@@ -269,10 +280,8 @@ public class VerificationResultActivity extends AppCompatActivity {
             colorRes = R.color.verdict_unreadable;
         } else if (v.contains("SATIRE")) {
             colorRes = R.color.verdict_satire;
-        } else {
-            colorRes = R.color.white;
         }
-
+        
         int color = ContextCompat.getColor(this, colorRes);
         tvVerdict.setTextColor(color);
         if (pbRealityScore != null) {

@@ -5,6 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/drawr"
     android:padding="16dp"
     tools:context=".MainActivity">
 
@@ -13,6 +14,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Reality Lens Snipping Tool"
+        android:textColor="?attr/textPrimary"
         android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/tv_desc"
@@ -27,6 +29,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Tap start, then drag to select any part of your screen."
+        android:textColor="?attr/textSecondary"
         android:textAlignment="center"
         app:layout_constraintBottom_toTopOf="@+id/btn_start_snipping"
         app:layout_constraintEnd_toEndOf="parent"
@@ -39,6 +42,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:text="Start Snipping"
+        android:backgroundTint="@color/gradient_start"
+        android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

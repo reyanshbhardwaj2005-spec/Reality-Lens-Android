@@ -2,6 +2,20 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.RealiyLens" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/gradient_start</item>
+
+        <!-- Fix yellow autofill highlight -->
+        <item name="android:autofilledHighlight" tools:targetApi="26">@android:color/transparent</item>
+
+        <!-- Custom Attributes for Dark Mode -->
+        <item name="mainBackground">#0B0B0E</item>
+        <item name="secondaryBackground">#1C1C1E</item>
+        <item name="textPrimary">#FFFFFF</item>
+        <item name="textSecondary">#BDBDBD</item>
+        <item name="cardStrokeColor">#1F1F1F</item>
+
+        <item name="gradientStart">#020617</item>
+        <item name="gradientCenter">#0F172A</item>
+        <item name="gradientEnd">#000000</item>
     </style>
 </resources>

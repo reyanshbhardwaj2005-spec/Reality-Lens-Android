@@ -8,7 +8,7 @@
     app:cardBackgroundColor="@android:color/transparent"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
-    app:strokeColor="@color/input_stroke"
+    app:strokeColor="?attr/cardStrokeColor"
     app:strokeWidth="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -42,7 +42,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:background="@drawable/panel_background"
             android:paddingHorizontal="8dp"
             android:paddingVertical="2dp"
             android:textColor="@color/white"
@@ -58,7 +57,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/textSecondary"
             android:textSize="10sp"
             app:layout_constraintBottom_toBottomOf="@id/tv_verdict_badge"
             app:layout_constraintEnd_toEndOf="parent"
@@ -74,7 +73,7 @@
             android:layout_marginTop="6dp"
             app:trackThickness="4dp"
             app:trackCornerRadius="2dp"
-            app:trackColor="#1AFFFFFF"
+            app:trackColor="?attr/cardStrokeColor"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/tv_verdict_badge"
             app:layout_constraintTop_toBottomOf="@id/tv_verdict_badge" />
@@ -87,7 +86,7 @@
             android:layout_marginTop="8dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:textColor="@color/white"
+            android:textColor="?attr/textPrimary"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/tv_verdict_badge"
@@ -100,13 +99,13 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/textSecondary"
             android:textSize="11sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/tv_verdict_badge"
             app:layout_constraintTop_toBottomOf="@id/tv_content_preview"
-            tools:text="2023-10-27 10:30 AM" />
+            tools:text="5/28/2026, 12:11:57 PM" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

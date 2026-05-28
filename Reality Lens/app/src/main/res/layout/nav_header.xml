@@ -11,14 +11,15 @@
     <ImageView
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:src="@drawable/outline_account_circle_24" />
+        android:src="@drawable/outline_account_circle_24"
+        android:id="@+id/iv_user_avatar" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="8dp"
         android:text="Reality Lens User"
-        android:textColor="@color/white"
+        android:textColor="?attr/textPrimary"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         android:textStyle="bold"
         android:id="@+id/tv_user_username"/>
@@ -28,6 +29,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="you@example.com"
-        android:textColor="@color/white" />
+        android:textColor="?attr/textSecondary" />
 
 </LinearLayout>
