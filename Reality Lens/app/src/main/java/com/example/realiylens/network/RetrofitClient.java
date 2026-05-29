@@ -1,5 +1,6 @@
 package com.example.realiylens.network;
 
+import com.example.realiylens.BuildConfig;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -7,7 +8,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
-    private static final String BASE_URL = "https://realitylens-9qu1.onrender.com/";
+    // BASE_URL is now fetched from BuildConfig which reads from .env file
+    private static final String BASE_URL = BuildConfig.BASE_URL;
     private static Retrofit retrofit = null;
 
     public static ApiService getApiService() {

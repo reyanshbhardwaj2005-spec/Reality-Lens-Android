@@ -94,7 +94,7 @@ public class LoginActivity extends AppCompatActivity {
                 StatusBarManager statusBarManager = getSystemService(StatusBarManager.class);
                 if (statusBarManager != null) {
                     ComponentName componentName = new ComponentName(this, SnippingTileService.class);
-                    Icon icon = Icon.createWithResource(this, R.mipmap.ic_launcher);
+                    Icon icon = Icon.createWithResource(this, R.drawable.icon);
                     String label = "Snip Area";
 
                     Executor executor = getMainExecutor();

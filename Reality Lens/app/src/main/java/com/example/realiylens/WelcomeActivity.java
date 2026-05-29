@@ -5,10 +5,12 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.realiylens.network.LoginRequest;
 import com.example.realiylens.network.LoginResponse;
+import com.example.realiylens.network.RegisterRequest;
 import com.example.realiylens.network.RetrofitClient;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -17,18 +19,17 @@ import retrofit2.Response;
 public class WelcomeActivity extends AppCompatActivity {
 
     private View skeleton, content;
+    private TextView tvStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // If launched as the main entry point, check for persistent login
         String action = getIntent().getStringExtra("action");
         if (action == null) {
             SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
             String savedToken = prefs.getString("access_token", null);
             if (savedToken == null || savedToken.isEmpty()) {
-                // Not logged in, go to Login
                 Intent intent = new Intent(this, LoginActivity.class);
                 startActivity(intent);
                 finish();
@@ -40,8 +41,8 @@ public class WelcomeActivity extends AppCompatActivity {
 
         skeleton = findViewById(R.id.welcome_skeleton);
         content = findViewById(R.id.welcome_content);
+        tvStatus = findViewById(R.id.tv_login_status);
 
-        // Show skeleton immediately
         skeleton.setVisibility(View.VISIBLE);
         content.setVisibility(View.GONE);
 
@@ -49,8 +50,12 @@ public class WelcomeActivity extends AppCompatActivity {
             String email = getIntent().getStringExtra("email");
             String password = getIntent().getStringExtra("password");
             performLogin(email, password);
+        } else if ("register".equals(action)) {
+            String name = getIntent().getStringExtra("name");
+            String email = getIntent().getStringExtra("email");
+            String password = getIntent().getStringExtra("password");
+            performRegister(name, email, password);
         } else {
-            // Already logged in or navigating normally
             showContent();
         }
 
@@ -72,26 +77,50 @@ public class WelcomeActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    String token = response.body().getAccessToken();
-                    SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-                    prefs.edit().putString("access_token", token).apply();
-                    showContent();
+                    saveTokenAndShow(response.body().getAccessToken(), "You are logged in successfully");
                 } else {
-                    Toast.makeText(WelcomeActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(WelcomeActivity.this, LoginActivity.class);
-                    startActivity(intent);
-                    finish();
+                    handleError("Login failed");
                 }
             }
 
             @Override
             public void onFailure(Call<LoginResponse> call, Throwable t) {
-                Toast.makeText(WelcomeActivity.this, "Network error", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(WelcomeActivity.this, LoginActivity.class);
-                startActivity(intent);
-                finish();
+                handleError("Network error: " + t.getMessage());
             }
         });
+    }
+
+    private void performRegister(String name, String email, String password) {
+        RegisterRequest registerRequest = new RegisterRequest(name, email, password);
+        RetrofitClient.getApiService().register(registerRequest).enqueue(new Callback<LoginResponse>() {
+            @Override
+            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    saveTokenAndShow(response.body().getAccessToken(), "Account created successfully");
+                } else {
+                    handleError("Registration failed: " + response.message());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<LoginResponse> call, Throwable t) {
+                handleError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    private void saveTokenAndShow(String token, String statusText) {
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        prefs.edit().putString("access_token", token).apply();
+        if (tvStatus != null) tvStatus.setText(statusText);
+        showContent();
+    }
+
+    private void handleError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     private void showContent() {

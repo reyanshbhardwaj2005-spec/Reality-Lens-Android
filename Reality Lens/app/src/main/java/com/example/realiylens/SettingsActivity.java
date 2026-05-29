@@ -15,6 +15,7 @@ public class SettingsActivity extends AppCompatActivity {
     private static final String PREFS_NAME = "AppPrefs";
     private static final String PREF_DARK_MODE = "dark_mode";
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

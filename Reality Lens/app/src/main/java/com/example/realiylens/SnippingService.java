@@ -99,7 +99,7 @@ public class SnippingService extends Service {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(title)
                 .setContentText(content)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.icon)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(isOngoing)
                 .build();
@@ -134,7 +134,7 @@ public class SnippingService extends Service {
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .setBigContentTitle(title)
                         .bigText(mainText + "\nTap to view full analysis."))
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.icon)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setDefaults(Notification.DEFAULT_ALL)
                 .setAutoCancel(true)
